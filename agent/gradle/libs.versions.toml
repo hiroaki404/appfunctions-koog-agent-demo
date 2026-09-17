@@ -6,8 +6,13 @@ junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
-kotlin = "2.2.10"
+# Koog 1.2.0 requires Kotlin 2.3.10+. Bumped from the template default (2.2.10). Pinned to
+# 2.3.10 exactly: the Compose compiler plugin only ships versions matching Kotlin's own
+# releases (2.3.0/2.3.10/2.3.20/2.3.21), unlike KSP which publishes extra patch builds.
+kotlin = "2.3.10"
 composeBom = "2026.02.01"
+appfunctions = "1.0.0-alpha11"
+koog = "1.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -24,6 +29,8 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+appfunctions = { group = "androidx.appfunctions", name = "appfunctions", version.ref = "appfunctions" }
+koog-agents = { group = "ai.koog", name = "koog-agents", version.ref = "koog" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
