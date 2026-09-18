@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
+    appfn:description="Provides calculator functions.
+Operational Patterns:
+  - Call 'add' to sum exactly two integers.
+  - Call 'calculateTotal' to compute the total price of line items (unitPrice * quantity for each item), with an optional discount percentage applied to the subtotal."
+    appfn:displayDescription="@string/app_function_app_display_description"/>

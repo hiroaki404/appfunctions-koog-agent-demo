@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">tool</string>
+    <string name="app_function_app_description">Sample app that provides calculator functions.
+    Use this when a user asks to add two numbers or calculate the total price of items with a discount.</string>
+    <string name="app_function_app_display_description">AppFunctions Koog Demo Calculator</string>
 </resources>
