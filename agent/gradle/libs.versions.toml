@@ -31,8 +31,17 @@ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-te
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 appfunctions = { group = "androidx.appfunctions", name = "appfunctions", version.ref = "appfunctions" }
 koog-agents = { group = "ai.koog", name = "koog-agents", version.ref = "koog" }
+# koog-agents only pulls in LLM clients as runtime-scope deps, not compile-time ones, so
+# GoogleLLMClient/GoogleModels need an explicit dependency. Note: unlike the other koog-*
+# artifacts, prompt-executor-google-client's newest full release is 1.2.0-beta (no stable
+# 1.2.0 was published for it) — its pom still pins the same kotlin-bom (2.3.10) and depends
+# on the other ai.koog artifacts at the stable 1.2.0, so mixing versions is safe.
+koog-prompt-executor-google-client = { group = "ai.koog", name = "prompt-executor-google-client", version = "1.2.0-beta" }
+# Provides the KoogHttpClient.Factory service-loaded at runtime by the LLM clients (Ktor-backed).
+koog-http-client-ktor = { group = "ai.koog", name = "http-client-ktor", version.ref = "koog" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 

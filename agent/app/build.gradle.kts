@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 /** Reads a key from the (gitignored) local.properties file, or "" if absent. */
@@ -41,8 +42,9 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        // Koog 1.2.0's inline functions (e.g. typeToken) are compiled targeting JVM 17.
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         compose = true
@@ -64,6 +66,8 @@ dependencies {
     // @AppFunctionServiceEntryPoint declarations, which belong to the tool app.
     implementation(libs.appfunctions)
     implementation(libs.koog.agents)
+    implementation(libs.koog.prompt.executor.google.client)
+    implementation(libs.koog.http.client.ktor)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
