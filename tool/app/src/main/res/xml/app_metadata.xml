@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
-    appfn:description="Provides calculator functions.
+    appfn:description="Provides arithmetic, order-total, and fixed-rate currency-conversion functions.
 Operational Patterns:
-  - Call 'add' to sum exactly two integers.
-  - Call 'calculateTotal' to compute the total price of line items (unitPrice * quantity for each item), with an optional discount percentage applied to the subtotal."
+  - calculateTotal processes all line items for one order in a single call.
+Constraints:
+  - calculateTotal accepts non-negative whole Japanese-yen prices and non-negative quantities; discountPercent is 0 through 100 and defaults to 0.
+  - convertCurrency accepts non-negative finite amounts and uses fixed demo rates: JPY=1, USD=100 JPY, EUR=200 JPY."
     appfn:displayDescription="@string/app_function_app_display_description"/>
