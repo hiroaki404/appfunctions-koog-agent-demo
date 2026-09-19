@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permissions>
+    <privapp-permissions package="dev.hiroaki404.appfunctions.koogdemo.agent">
+        <permission name="android.permission.EXECUTE_APP_FUNCTIONS" />
+    </privapp-permissions>
+</permissions>
