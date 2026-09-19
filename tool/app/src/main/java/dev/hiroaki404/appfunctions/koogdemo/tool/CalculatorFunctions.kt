@@ -26,6 +26,12 @@ data class LineItem(val name: String, val unitPrice: Long, val quantity: Long)
  * `CalculatorAppFunctionService` (declared in AndroidManifest.xml) plus an XML describing the
  * exposed functions.
  */
+private val demoExchangeRatesToJpy = mapOf(
+    "JPY" to 1.0,
+    "USD" to 100.0,
+    "EUR" to 200.0,
+)
+
 @AppFunctionServiceEntryPoint(
     serviceName = "CalculatorAppFunctionService",
     appFunctionXmlFileName = "calculator_functions",
@@ -47,5 +53,24 @@ abstract class BaseCalculatorAppFunctionService : AppFunctionService() {
     fun calculateTotal(items: List<LineItem>, discountPercent: Long): Long {
         val subtotal = items.sumOf { it.unitPrice * it.quantity }
         return subtotal - (subtotal * discountPercent / 100)
+    }
+
+    /**
+     * Converts [amount] from currency [from] to currency [to] using fixed demo
+     * exchange rates. Supported currency codes are JPY, USD, and EUR.
+     */
+    @AppFunction(isDescribedByKDoc = true)
+    fun convertCurrency(amount: Double, from: String, to: String): Double {
+        val fromCode = from.uppercase()
+        val toCode = to.uppercase()
+        val fromRate = demoExchangeRatesToJpy[fromCode]
+            ?: throw IllegalArgumentException(
+                "Unsupported currency code: $fromCode. Supported codes are JPY, USD, EUR.",
+            )
+        val toRate = demoExchangeRatesToJpy[toCode]
+            ?: throw IllegalArgumentException(
+                "Unsupported currency code: $toCode. Supported codes are JPY, USD, EUR.",
+            )
+        return amount * fromRate / toRate
     }
 }
