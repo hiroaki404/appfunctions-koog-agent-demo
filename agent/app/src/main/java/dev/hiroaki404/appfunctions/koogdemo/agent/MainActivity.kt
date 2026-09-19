@@ -78,7 +78,7 @@ fun AgentChatScreen(appFunctionManager: AppFunctionManager?, modifier: Modifier 
             value = prompt,
             onValueChange = { prompt = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Ask the agent (e.g. \"add 123 and 456\")") },
+            label = { Text("Ask the agent (e.g. \"add 123 and 456\" or calculate a total)") },
         )
         Row(modifier = Modifier.padding(top = 8.dp)) {
             Button(
