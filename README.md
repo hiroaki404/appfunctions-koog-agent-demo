@@ -144,3 +144,19 @@ redone).
   question (e.g. "what is 123 plus 456") works fine, as does the same literal phrase with fewer
   tools registered. Root cause not identified; treat it as a known quirk of this Gemini model /
   tool-set combination rather than a bug in the metadata → tool conversion.
+
+## References
+
+This repo's code is original — nothing below is copied — but its design leaned on reading these
+projects:
+
+- [FilipFan/AppFunctionsPilot](https://github.com/FilipFan/AppFunctionsPilot) — the priv-app
+  permission-granting approach used in [Granting the agent permission](#granting-the-agent-permission),
+  and an early example of a generic metadata → argument executor.
+- [android/appfunctions](https://github.com/android/appfunctions) — the official AppFunctions
+  Testing Agent, referenced for its metadata → schema conversion (circular-reference detection,
+  function-name sanitizing) and its shell-identity permission approach (not used here, but
+  considered).
+- [JetBrains/koog](https://github.com/JetBrains/koog), specifically `agents-mcp`'s `McpTool` —
+  the design this repo's `AppFunctionTool` (a generic `Tool<JSONObject, TResult>` built from
+  runtime-discovered metadata) follows.
