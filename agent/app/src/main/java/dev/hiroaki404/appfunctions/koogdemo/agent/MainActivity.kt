@@ -67,6 +67,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+// Production code would invoke AppFunctionManager through a ViewModel; direct use is intentional in this demo.
+// TODO: Move AppFunctionManager usage behind a ViewModel when this becomes production code.
 fun AgentChatScreen(appFunctionManager: AppFunctionManager?, modifier: Modifier = Modifier) {
     var prompt by remember { mutableStateOf("") }
     var response by remember { mutableStateOf("") }
