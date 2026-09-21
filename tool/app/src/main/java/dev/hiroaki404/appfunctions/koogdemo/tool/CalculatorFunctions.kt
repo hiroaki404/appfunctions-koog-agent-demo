@@ -43,6 +43,9 @@ private val hundred = BigInteger.valueOf(100)
     appFunctionXmlFileName = "calculator_functions",
 )
 abstract class BaseCalculatorAppFunctionService : AppFunctionService() {
+    /** Override in tests or alternate hosts to observe calls without Android logcat. */
+    protected open val appFunctionLogger: AppFunctionLogger = AndroidAppFunctionLogger
+
     /**
      * Add two integers and return their sum.
      *
@@ -53,8 +56,8 @@ abstract class BaseCalculatorAppFunctionService : AppFunctionService() {
      *   use smaller absolute values and retry.
      */
     @AppFunction(isDescribedByKDoc = true)
-    fun add(num1: Long, num2: Long): Long {
-        return try {
+    fun add(num1: Long, num2: Long): Long = executeLogged("add", "num1=$num1, num2=$num2") {
+        try {
             Math.addExact(num1, num2)
         } catch (_: ArithmeticException) {
             throw AppFunctionInvalidArgumentException(
@@ -75,7 +78,10 @@ abstract class BaseCalculatorAppFunctionService : AppFunctionService() {
      *   invalid value or split the calculation and retry.
      */
     @AppFunction(isDescribedByKDoc = true)
-    fun calculateTotal(items: List<LineItem>, discountPercent: Long = 0): Long {
+    fun calculateTotal(items: List<LineItem>, discountPercent: Long = 0): Long = executeLogged(
+        "calculateTotal",
+        "items=${items.joinToString(prefix = "[", postfix = "]")}, discountPercent=$discountPercent",
+    ) {
         if (discountPercent !in 0..100) {
             throw AppFunctionInvalidArgumentException(
                 "discountPercent must be between 0 and 100 inclusive.",
@@ -94,7 +100,7 @@ abstract class BaseCalculatorAppFunctionService : AppFunctionService() {
             }
         }
 
-        return try {
+        try {
             val subtotal = items.fold(BigInteger.ZERO) { total, item ->
                 total + BigInteger.valueOf(item.unitPrice) * BigInteger.valueOf(item.quantity)
             }
@@ -119,7 +125,10 @@ abstract class BaseCalculatorAppFunctionService : AppFunctionService() {
      *   currency code is unsupported, or the result is non-finite. Correct the input and retry.
      */
     @AppFunction(isDescribedByKDoc = true)
-    fun convertCurrency(amount: Double, from: String, to: String): Double {
+    fun convertCurrency(amount: Double, from: String, to: String): Double = executeLogged(
+        "convertCurrency",
+        "amount=$amount, from=$from, to=$to",
+    ) {
         if (!amount.isFinite() || amount < 0) {
             throw AppFunctionInvalidArgumentException(
                 "amount must be a non-negative finite number.",
@@ -135,12 +144,26 @@ abstract class BaseCalculatorAppFunctionService : AppFunctionService() {
             ?: throw AppFunctionInvalidArgumentException(
                 "Unsupported currency code: $toCode. Supported codes are JPY, USD, EUR.",
             )
-        return (amount * fromRate / toRate).also { convertedAmount ->
+        (amount * fromRate / toRate).also { convertedAmount ->
             if (!convertedAmount.isFinite()) {
                 throw AppFunctionInvalidArgumentException(
                     "The converted amount must be a finite number. Use a smaller amount.",
                 )
             }
+        }
+    }
+
+    private inline fun <T : Any> executeLogged(
+        functionName: String,
+        arguments: String,
+        block: () -> T,
+    ): T {
+        appFunctionLogger.started(functionName, arguments)
+        return try {
+            block().also { result -> appFunctionLogger.succeeded(functionName, arguments, result) }
+        } catch (error: Exception) {
+            appFunctionLogger.failed(functionName, arguments, error)
+            throw error
         }
     }
 }

@@ -133,7 +133,8 @@ redone).
 
 1. Launch `agent`. Type a prompt and hit Send — e.g. "what is 123 plus 456" or a nested-argument
    prompt like "3 apples at 100 yen and 2 pens at 50 yen with 10 percent discount, what's the
-   total?".
+   total?". While the agent runs, each Koog tool call appears in the UI with its function name,
+   arguments, status, and result (or error).
 2. **The punchline**: with `agent` still running (not rebuilt, not restarted), add a new
    `@AppFunction` to `tool`, rebuild just `tool`, and `adb install -r` it. Ask the agent something
    that only the new function can answer — it can call it on the very next prompt, because
@@ -142,6 +143,28 @@ redone).
    This repo's `convertCurrency(amount, from, to)` function (JPY/USD/EUR, fixed demo exchange
    rates so the answer obviously came from the tool and not the LLM's own knowledge) is exactly
    this kind of function — try asking "convert 100 USD to JPY" before and after installing it.
+
+### Verifying a tool call
+
+For an easy-to-identify end-to-end check, ask the agent:
+
+```text
+convert 10 USD to JPY
+```
+
+The UI should show a successful `convertCurrency` tool call with `amount=10`, `from=USD`,
+`to=JPY`, and a result of `1000.0`. The fixed demo rate makes this distinguishable from a result
+based on current exchange-rate knowledge.
+
+The `tool` app also logs the call independently. In another terminal, run:
+
+```sh
+adb logcat -s AppFunctionToolApp KoogAgent
+```
+
+Look for `Calling AppFunction: convertCurrency` followed by `AppFunction succeeded` and
+`returnValue=1000.0`. Seeing both the agent UI card and the `tool` process log confirms that Koog
+selected the runtime-discovered tool and Android executed the AppFunction in the provider app.
 
 ## Known issues
 

@@ -1,11 +1,21 @@
 package dev.hiroaki404.appfunctions.koogdemo.tool
 
 import androidx.appfunctions.AppFunctionInvalidArgumentException
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class CalculatorFunctionsInstrumentedTest {
+    private val failedFunctions = mutableListOf<String>()
     private val service = object : BaseCalculatorAppFunctionService() {
+        override val appFunctionLogger = object : AppFunctionLogger {
+            override fun started(functionName: String, arguments: String) = Unit
+            override fun succeeded(functionName: String, arguments: String, result: Any) = Unit
+            override fun failed(functionName: String, arguments: String, error: Exception) {
+                failedFunctions += functionName
+            }
+        }
+
         override fun onExecuteFunction(
             request: androidx.appfunctions.ExecuteAppFunctionRequest,
             cancellationSignal: android.os.CancellationSignal,
@@ -31,9 +41,11 @@ class CalculatorFunctionsInstrumentedTest {
 
     @Test
     fun convertCurrencyRejectsInvalidInputs() {
+        failedFunctions.clear()
         assertInvalidArgument { service.convertCurrency(-1.0, "JPY", "USD") }
         assertInvalidArgument { service.convertCurrency(Double.NaN, "JPY", "USD") }
         assertInvalidArgument { service.convertCurrency(1.0, "GBP", "JPY") }
+        assertEquals(listOf("convertCurrency", "convertCurrency", "convertCurrency"), failedFunctions)
     }
 
     private fun assertInvalidArgument(block: () -> Unit) {

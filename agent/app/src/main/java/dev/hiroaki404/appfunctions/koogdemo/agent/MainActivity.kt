@@ -11,8 +11,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,6 +34,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.AgentTheme
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private const val TAG = "AppFunctionDiscovery"
 private const val AGENT_TAG = "KoogAgent"
@@ -73,9 +80,15 @@ fun AgentChatScreen(appFunctionManager: AppFunctionManager?, modifier: Modifier 
     var prompt by remember { mutableStateOf("") }
     var response by remember { mutableStateOf("") }
     var isRunning by remember { mutableStateOf(false) }
+    var toolCallState by remember { mutableStateOf(ToolCallUiState()) }
     val scope = rememberCoroutineScope()
 
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
         OutlinedTextField(
             value = prompt,
             onValueChange = { prompt = it },
@@ -89,9 +102,20 @@ fun AgentChatScreen(appFunctionManager: AppFunctionManager?, modifier: Modifier 
                     val manager = appFunctionManager ?: return@Button
                     val currentPrompt = prompt
                     isRunning = true
+                    response = ""
+                    toolCallState = ToolCallUiState()
                     scope.launch {
                         response = try {
-                            runAgent(BuildConfig.GEMINI_API_KEY, manager, currentPrompt)
+                            runAgent(
+                                apiKey = BuildConfig.GEMINI_API_KEY,
+                                appFunctionManager = manager,
+                                prompt = currentPrompt,
+                                onToolCallEvent = { event ->
+                                    withContext(Dispatchers.Main.immediate) {
+                                        toolCallState = toolCallState.apply(event)
+                                    }
+                                },
+                            )
                         } catch (e: Exception) {
                             Log.e(AGENT_TAG, "Agent run failed", e)
                             "Error: ${e.message}"
@@ -108,6 +132,35 @@ fun AgentChatScreen(appFunctionManager: AppFunctionManager?, modifier: Modifier 
                 CircularProgressIndicator(modifier = Modifier.padding(start = 16.dp))
             }
         }
+        toolCallState.calls.forEach { call ->
+            ToolCallCard(call = call, modifier = Modifier.padding(top = 12.dp))
+        }
         Text(text = response, modifier = Modifier.padding(top = 16.dp))
+    }
+}
+
+@Composable
+private fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text("ツール: ${call.functionName}", style = MaterialTheme.typography.titleSmall)
+            Text("状態: ${call.status.label}", style = MaterialTheme.typography.bodySmall)
+            Text("引数", modifier = Modifier.padding(top = 8.dp), style = MaterialTheme.typography.labelMedium)
+            Text(call.arguments, style = MaterialTheme.typography.bodySmall)
+            call.result?.let { result ->
+                Text("結果", modifier = Modifier.padding(top = 8.dp), style = MaterialTheme.typography.labelMedium)
+                Text(result, style = MaterialTheme.typography.bodySmall)
+            }
+            call.error?.let { error ->
+                Text("エラー", modifier = Modifier.padding(top = 8.dp), style = MaterialTheme.typography.labelMedium)
+                Text(error, style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }
