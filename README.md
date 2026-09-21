@@ -96,13 +96,21 @@ Run/Debug workflow, so this repo doesn't use it.)
 #    not Android Studio's Run button or `android emulator start`).
 $ANDROID_SDK_ROOT/emulator/emulator -avd <your-rooted-avd-name> -writable-system
 
-# 2. Root and remount. If the first remount just prints a message asking you to reboot,
-#    reboot once and repeat this step — the second remount should say "Remount succeeded".
+# 2. Confirm that the expected emulator is connected and has completed booting.
+#    `adb devices` must list `emulator-5554` with the state `device`, and this command
+#    must print `1`.
+adb devices
+adb -s emulator-5554 shell getprop sys.boot_completed
+
+# 3. Root and remount. `adb root` must report either "adbd is restarting as root" or
+#    "adbd is already running as root". If the first remount just prints a message
+#    asking you to reboot, reboot once and repeat this step — the successful remount
+#    must print "Remount succeeded".
 adb root
 adb wait-for-device
 adb remount
 
-# 3. Push the permission allowlist (already checked into this repo) and the agent APK.
+# 4. Push the permission allowlist (already checked into this repo) and the agent APK.
 #    If the package was already installed normally, uninstall it first — priv-app placement
 #    conflicts with a regular install.
 adb uninstall dev.hiroaki404.appfunctions.koogdemo.agent 2>/dev/null
