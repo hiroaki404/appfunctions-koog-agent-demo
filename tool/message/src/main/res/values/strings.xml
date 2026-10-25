@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">メッセージ</string>
+    <string name="app_function_app_description">Messaging app with a fixed set of contacts (トム, 花子,
+    健太). Use this when a user asks to send a message to one of these contacts. Messages are only
+    recorded in the app, not delivered to real people.</string>
+    <string name="app_function_app_display_description">メッセージアプリ</string>
+</resources>

@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">kototabi</string>
+    <string name="app_function_app_description">Travel planning app that stores trip itineraries, including past trips, and books flights.
+    Use this when a user asks to recall a past trip, look up tourist spots, save a trip plan, or book a flight.</string>
+    <string name="app_function_app_display_description">kototabi travel planner</string>
+</resources>

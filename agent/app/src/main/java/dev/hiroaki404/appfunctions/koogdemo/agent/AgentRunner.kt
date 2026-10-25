@@ -1,5 +1,7 @@
 package dev.hiroaki404.appfunctions.koogdemo.agent
 
+import ai.koog.agents.chatMemory.feature.ChatHistoryProvider
+import ai.koog.agents.chatMemory.feature.ChatMemory
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.features.eventHandler.feature.handleEvents
@@ -14,14 +16,20 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
+/** Koog 1.2.0 has no definition for Gemini 3.5 Flash-Lite, so reuse 3.5 Flash's capabilities with its id. */
+private val Gemini3_5FlashLite = GoogleModels.Gemini3_5Flash.copy(id = "gemini-3.5-flash-lite")
+
 /**
- * Runs a single-turn Koog agent with tools discovered at runtime. A new [AIAgent] is created for every
- * call, per the demo's "one agent per message" approach (see handoff 4.章 agent側の実装方針).
+ * Runs one turn of a Koog agent with tools discovered at runtime. A new [AIAgent] is created for every
+ * call, per the demo's "one agent per message" approach; conversation
+ * continuity comes from [chatHistoryProvider] and [sessionId], which the caller keeps across calls.
  */
 suspend fun runAgent(
     apiKey: String,
     appFunctionManager: AppFunctionManager,
     prompt: String,
+    chatHistoryProvider: ChatHistoryProvider,
+    sessionId: String,
     onToolCallEvent: suspend (ToolCallUiEvent) -> Unit = {},
 ): String {
     val tools = appFunctionManager.discoverAppFunctions().first().mapNotNull { metadata ->
@@ -41,10 +49,11 @@ suspend fun runAgent(
     return MultiLLMPromptExecutor(LLMProvider.Google to GoogleLLMClient(apiKey)).use { executor ->
         AIAgent(
             promptExecutor = executor,
-            llmModel = GoogleModels.Gemini2_5Flash,
+            llmModel = Gemini3_5FlashLite,
             toolRegistry = toolRegistry,
-            systemPrompt = "You are a helpful assistant. Use the available tools when they can fulfill the request.",
+            systemPrompt = buildSystemPrompt(),
         ) {
+            install(ChatMemory) { this.chatHistoryProvider = chatHistoryProvider }
             handleEvents {
                 onToolCallStarting { event ->
                     onToolCallEvent(
@@ -76,7 +85,7 @@ suspend fun runAgent(
                     )
                 }
             }
-        }.run(prompt)
+        }.run(prompt, sessionId)
     }
 }
 

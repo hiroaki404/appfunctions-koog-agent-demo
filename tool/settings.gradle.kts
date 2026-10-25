@@ -23,4 +23,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "tool"
-include(":app")
+include(":kototabi")
+include(":message")

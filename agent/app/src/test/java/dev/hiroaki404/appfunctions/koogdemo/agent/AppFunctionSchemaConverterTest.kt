@@ -61,6 +61,48 @@ class AppFunctionSchemaConverterTest {
     }
 
     @Test
+    fun saveItinerarySchemaResolvesNestedReferences() {
+        val spot = AppFunctionObjectTypeMetadata(
+            properties = mapOf("name" to AppFunctionStringTypeMetadata(false), "description" to AppFunctionStringTypeMetadata(false)),
+            required = listOf("name", "description"),
+            qualifiedName = "example.Spot",
+            isNullable = false,
+        )
+        val itineraryDay = AppFunctionObjectTypeMetadata(
+            properties = mapOf(
+                "date" to AppFunctionStringTypeMetadata(false),
+                "spots" to AppFunctionArrayTypeMetadata(AppFunctionReferenceTypeMetadata("Spot", false), false),
+            ),
+            required = listOf("date", "spots"),
+            qualifiedName = "example.ItineraryDay",
+            isNullable = false,
+        )
+        val itinerary = AppFunctionObjectTypeMetadata(
+            properties = mapOf(
+                "title" to AppFunctionStringTypeMetadata(false),
+                "days" to AppFunctionArrayTypeMetadata(AppFunctionReferenceTypeMetadata("ItineraryDay", false), false),
+            ),
+            required = listOf("title", "days"),
+            qualifiedName = "example.Itinerary",
+            isNullable = false,
+        )
+        val metadata = function(
+            id = "example.Travel#saveItinerary",
+            parameters = listOf(parameter("itinerary", AppFunctionReferenceTypeMetadata("Itinerary", false))),
+            components = AppFunctionComponentsMetadata(mapOf("Spot" to spot, "ItineraryDay" to itineraryDay, "Itinerary" to itinerary)),
+        )
+
+        val root = metadata.toToolDescriptor("saveItinerary").requiredParameters.single().type as ToolParameterType.Object
+        val day = (root.properties.first { it.name == "days" }.type as ToolParameterType.List).itemsType as ToolParameterType.Object
+        val spotType = (day.properties.first { it.name == "spots" }.type as ToolParameterType.List).itemsType as ToolParameterType.Object
+
+        assertEquals(listOf("title", "days"), root.properties.map { it.name })
+        assertEquals(listOf("date", "spots"), day.properties.map { it.name })
+        assertEquals(listOf("name", "description"), spotType.properties.map { it.name })
+        assertEquals(listOf("name", "description"), spotType.requiredProperties)
+    }
+
+    @Test
     fun circularReferenceIsRejectedWithoutRecursingForever() {
         val selfReference = AppFunctionReferenceTypeMetadata("Node", false)
         val node = AppFunctionObjectTypeMetadata(

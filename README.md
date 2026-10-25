@@ -10,25 +10,35 @@ build time.
 > fly, and lets an LLM (Gemini) decide which one to call — without the agent app ever having seen
 > those functions at compile time.
 
-The punchline: add a new `@AppFunction` to the `tool` app, reinstall only `tool`, and the `agent`
-app — untouched, not rebuilt, not even restarted — can call it on the next prompt.
+The scenario: a travel app (**kototabi**) and a messaging app each publish AppFunctions. The agent
+looks up your past trips in kototabi, plans and saves a new itinerary, books a flight, and asks a
+friend over the messaging app — calling functions across both apps.
+
+The punchline: with the messaging app **not** installed, the agent says it can't send a message.
+Install just that app, ask again, and the `agent` app — untouched, not rebuilt, not even
+restarted — calls its function on the next prompt.
 
 ## Structure
 
-This repo has two **independent Gradle projects** (not a multi-module build — that's intentional:
-the agent genuinely doesn't know about the tool app at build time).
+This repo has two **independent Gradle projects** (that's intentional: the agent genuinely doesn't
+know about the tool apps at build time).
 
 ```
-tool/    Publishes a few AppFunctions (a calculator-ish set of functions).
-agent/   Discovers whatever AppFunctions are installed on the device, converts their metadata
-         into Koog tool descriptors, and runs a Gemini-backed Koog agent against them.
+tool/       One Gradle project with two independent app modules that publish AppFunctions:
+  kototabi/   Travel app: getTravelInfo, saveItinerary, searchItineraries, bookFlight
+              (itineraries and bookings are stored with Room).
+  message/    Messaging app: sendMessage (messages are only recorded and shown in the app).
+agent/      Discovers whatever AppFunctions are installed on the device, converts their metadata
+            into Koog tool descriptors, and runs a Gemini-backed Koog agent against them.
 ```
 
 Key files:
 
-- `tool/app/src/main/java/.../CalculatorFunctions.kt` — the `@AppFunction` declarations
-  (`add`, `calculateTotal`, `convertCurrency`), inside an `AppFunctionService` per the
-  `androidx.appfunctions` 1.0.0-alpha10+ API.
+- `tool/kototabi/src/main/java/.../KototabiFunctions.kt` and
+  `tool/message/src/main/java/.../MessageFunctions.kt` — the `@AppFunction` declarations, each
+  inside an `AppFunctionService` per the `androidx.appfunctions` 1.0.0-alpha10+ API.
+  `KototabiFunctions.kt` uses nested `@AppFunctionSerializable` types
+  (`Itinerary` → `ItineraryDay` → `Spot`) as both arguments and return values.
 - `agent/app/src/main/java/.../AppFunctionDiscovery.kt` — subscribes to
   `AppFunctionManager.observeAppFunctions()`, re-querying whenever any app's metadata changes.
 - `agent/app/src/main/java/.../AppFunctionSchemaConverter.kt` — converts
@@ -38,7 +48,9 @@ Key files:
   result back to JSON. One instance of this class is created per discovered function — no
   per-function code on the agent side.
 - `agent/app/src/main/java/.../AgentRunner.kt` — builds a `ToolRegistry` from the discovered
-  functions and runs a single-turn Koog `AIAgent` against Gemini.
+  functions and runs one turn of a Koog `AIAgent` against Gemini 3.5 Flash-Lite. A new agent is
+  created for every message; Koog's `ChatMemory` feature, keyed by a session id held in
+  `AgentViewModel`, carries the conversation across messages.
 
 ## Requirements
 
@@ -58,19 +70,24 @@ Create `agent/local.properties` (gitignored) with:
 GEMINI_API_KEY=your-api-key-here
 ```
 
-### 2. Build and install `tool`
+### 2. Build and install the tool apps
 
 ```sh
 cd tool
-./gradlew assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+./gradlew :kototabi:assembleDebug :message:assembleDebug
+adb install -r kototabi/build/outputs/apk/debug/kototabi-debug.apk
+adb install -r message/build/outputs/apk/debug/message-debug.apk
 ```
 
-Verify the functions are published:
+Verify the functions are published (the command lists every app's functions; look for
+`BaseKototabiAppFunctionService#...` and `BaseMessageAppFunctionService#sendMessage`):
 
 ```sh
-adb shell cmd app_function list-app-functions dev.hiroaki404.appfunctions.koogdemo.tool
+adb shell cmd app_function list-app-functions | grep koogdemo
 ```
+
+kototabi seeds a past trip ("2025年夏の北海道") when its database is first created. Its screen has debug buttons to
+insert the upcoming December trip and to reset to the initial state.
 
 ### 3. Build `agent`
 
@@ -131,50 +148,47 @@ redone).
 
 ## Running the demo
 
-1. Launch `agent`. Type a prompt and hit Send — e.g. "what is 123 plus 456" or a nested-argument
-   prompt like "3 apples at 100 yen and 2 pens at 50 yen with 10 percent discount, what's the
-   total?". While the agent runs, each Koog tool call appears in the UI with its function name,
-   arguments, status, and result (or error).
-2. **The punchline**: with `agent` still running (not rebuilt, not restarted), add a new
-   `@AppFunction` to `tool`, rebuild just `tool`, and `adb install -r` it. Ask the agent something
-   that only the new function can answer — it can call it on the very next prompt, because
-   `agent` re-discovers AppFunctions on every request instead of hardcoding a tool list.
+Send the messages below in one conversation. While the agent runs, each Koog tool call appears in
+the UI with its function name, arguments, status, and result (or error); kototabi and the
+messaging app update their screens as soon as a function writes to them.
 
-   This repo's `convertCurrency(amount, from, to)` function (JPY/USD/EUR, fixed demo exchange
-   rates so the answer obviously came from the tool and not the LLM's own knowledge) is exactly
-   this kind of function — try asking "convert 100 USD to JPY" before and after installing it.
+| # | Message | Expected tool calls |
+|---|---|---|
+| 1 | 12月に北海道旅行を計画しています。去年の北海道旅行で行かなかった場所を中心にプランを考えて、旅程の計画を作ってください | `searchItineraries` → `getTravelInfo` → `saveItinerary` |
+| 2 | ではこの旅程で航空券を取っておいて | `bookFlight` |
+| 3 | では12月5日〜6日のこの旅程で、メッセージアプリで友達のトムくんに予定が空いているか聞いておいて | `sendMessage` |
 
-### Verifying a tool call
+English prompts work too (`adb shell input text` can't type Japanese), e.g. "Plan a December trip
+to Hokkaido. Check my Hokkaido trip from last year, avoid places I already visited, and save the
+new itinerary in the travel app.", "Then book a flight from Tokyo for this itinerary.", and "Using
+the message app, ask my friend Tom if he is free for this trip."
 
-For an easy-to-identify end-to-end check, ask the agent:
+**The punchline**: uninstall the messaging app (`adb uninstall dev.hiroaki404.appfunctions.koogdemo.message`)
+and send message 3 — the agent answers that it can't send messages. With `agent` still running
+(not rebuilt, not restarted), `adb install` the messaging app and send the same message again in
+the same conversation: the agent calls `sendMessage`, because it re-discovers AppFunctions on
+every request instead of hardcoding a tool list.
 
-```text
-convert 10 USD to JPY
-```
-
-The UI should show a successful `convertCurrency` tool call with `amount=10`, `from=USD`,
-`to=JPY`, and a result of `1000.0`. The fixed demo rate makes this distinguishable from a result
-based on current exchange-rate knowledge.
-
-The `tool` app also logs the call independently. In another terminal, run:
+To watch the calls from the provider apps' side, run in another terminal:
 
 ```sh
 adb logcat -s AppFunctionToolApp KoogAgent
 ```
 
-Look for `Calling AppFunction: convertCurrency` followed by `AppFunction succeeded` and
-`returnValue=1000.0`. Seeing both the agent UI card and the `tool` process log confirms that Koog
-selected the runtime-discovered tool and Android executed the AppFunction in the provider app.
+Each call logs `Calling AppFunction: <name> args={...}` followed by `AppFunction succeeded` and its
+`returnValue`. Seeing both the agent UI card and the provider app's log confirms that Koog selected
+the runtime-discovered tool and Android executed the AppFunction in the provider app.
 
 ## Known issues
 
-- **A specific phrase can make the LLM return an empty response.** With all three `tool`
-  functions installed, asking the agent literally "add 123 and 456" deterministically triggers a
-  Koog `AIAgentStuckInTheNodeException`: Gemini returns an empty response (`finishReason=STOP`,
-  no text, no tool call), which the agent's single-turn graph has no edge to handle. Rewording the
-  question (e.g. "what is 123 plus 456") works fine, as does the same literal phrase with fewer
-  tools registered. Root cause not identified; treat it as a known quirk of this Gemini model /
-  tool-set combination rather than a bug in the metadata → tool conversion.
+- **Gemini 2.5 Flash writes tool calls as text.** With 2.5 Flash, the agent sometimes stopped
+  after the first tool call because the model replied with a Python-like
+  `_tool_code print(default_api....)` string instead of a function call, which ends Koog's run.
+  The agent therefore uses Gemini 3.5 Flash-Lite. Koog 1.2.0 has no definition for it, so
+  `AgentRunner.kt` copies `GoogleModels.Gemini3_5Flash` with the id `gemini-3.5-flash-lite`.
+- **Pressing 「新しい会話」 while a request is running** clears the screen and starts a new session
+  immediately, but sending stays disabled until the running request finishes; its result is
+  discarded.
 
 ## References
 
