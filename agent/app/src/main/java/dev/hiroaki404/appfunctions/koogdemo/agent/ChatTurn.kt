@@ -9,6 +9,10 @@ data class ChatTurn(
     val error: String? = null,
     val isRunning: Boolean = true,
 ) {
+    /** True while the agent is waiting on the LLM, i.e. running with no tool call in flight. */
+    val isThinking: Boolean
+        get() = isRunning && toolCalls.calls.none { it.status == ToolCallStatus.Running }
+
     fun applyToolEvent(event: ToolCallUiEvent): ChatTurn = copy(toolCalls = toolCalls.apply(event))
 
     fun completed(response: String): ChatTurn = copy(response = response, error = null, isRunning = false)

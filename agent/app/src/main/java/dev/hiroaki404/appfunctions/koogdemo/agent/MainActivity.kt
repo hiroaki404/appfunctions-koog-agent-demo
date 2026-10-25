@@ -6,6 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -227,6 +232,9 @@ private fun ChatTurnItem(turn: ChatTurn, modifier: Modifier = Modifier) {
         turn.toolCalls.calls.forEach { call ->
             ToolCallCard(call = call)
         }
+        if (turn.isThinking) {
+            ThinkingIndicator()
+        }
         turn.response?.let { response ->
             Text(
                 plainAnswerText(response),
@@ -243,6 +251,41 @@ private fun ChatTurnItem(turn: ChatTurn, modifier: Modifier = Modifier) {
                 lineHeight = 24.75.sp,
             )
         }
+    }
+}
+
+@Composable
+private fun ThinkingIndicator(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "thinking")
+    Row(
+        modifier = modifier.padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        repeat(3) { index ->
+            // Each dot fades in and out on the same cycle, offset so the pulse travels left to right.
+            val alpha by transition.animateFloat(
+                initialValue = 0.25f,
+                targetValue = 0.25f,
+                animationSpec = infiniteRepeatable(
+                    animation = keyframes {
+                        durationMillis = 1200
+                        0.25f at index * 200
+                        1f at index * 200 + 300
+                        0.25f at index * 200 + 600
+                    },
+                ),
+                label = "dot$index",
+            )
+            Box(
+                modifier = Modifier
+                    .size(7.dp)
+                    .alpha(alpha)
+                    .clip(CircleShape)
+                    .background(Sea),
+            )
+        }
+        Text("考え中", modifier = Modifier.padding(start = 4.dp), color = Ink2, fontSize = 13.sp)
     }
 }
 

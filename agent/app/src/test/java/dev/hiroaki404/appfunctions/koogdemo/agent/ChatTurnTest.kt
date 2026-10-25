@@ -27,6 +27,19 @@ class ChatTurnTest {
     }
 
     @Test
+    fun thinkingOnlyWhileWaitingOnTheLlm() {
+        val started = ChatTurn(id = 1, prompt = "hello")
+        val toolRunning = started.applyToolEvent(ToolCallUiEvent.Started("c1", "searchTrips", "{}"))
+        val toolDone = toolRunning.applyToolEvent(ToolCallUiEvent.Completed("c1", "searchTrips", "{}", "[]"))
+
+        assertTrue(started.isThinking)
+        assertFalse(toolRunning.isThinking)
+        assertTrue(toolDone.isThinking)
+        assertFalse(toolDone.completed("answer").isThinking)
+        assertFalse(toolDone.failed("boom").isThinking)
+    }
+
+    @Test
     fun completedStopsRunningAndStoresResponse() {
         val turn = ChatTurn(id = 1, prompt = "hello").completed("answer")
 
