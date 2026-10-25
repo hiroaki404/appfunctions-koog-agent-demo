@@ -48,6 +48,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     prompt = prompt,
                     chatHistoryProvider = chatHistoryProvider,
                     sessionId = currentSessionId,
+                    appLabelOf = ::appLabelOf,
                     onToolCallEvent = { event ->
                         _turns.update { turns -> turns.updateTurn(turnId) { it.applyToolEvent(event) } }
                     },
@@ -64,6 +65,12 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    /** The provider app's name as shown on the launcher; the agent has no build-time knowledge of these apps. */
+    private fun appLabelOf(packageName: String): String? = runCatching {
+        val packageManager = getApplication<Application>().packageManager
+        packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
+    }.getOrNull()
 
     /** Starts over: a new session id means the agent no longer sees earlier turns. */
     fun newConversation() {

@@ -265,7 +265,6 @@ private fun PromptBubble(prompt: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier) {
-    val displayName = toolDisplayNameOf(call.functionName)
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -278,7 +277,7 @@ private fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ToolStatusIcon(call.status)
             Text(
-                displayName.function,
+                call.functionName,
                 modifier = Modifier.weight(1f, fill = false),
                 color = Ink,
                 fontFamily = FontFamily.Monospace,
@@ -287,7 +286,7 @@ private fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            displayName.appLabel?.let { label ->
+            call.appLabel?.let { label ->
                 Text(
                     label,
                     modifier = Modifier

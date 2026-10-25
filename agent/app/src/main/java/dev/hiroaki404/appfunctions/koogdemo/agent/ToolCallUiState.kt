@@ -6,10 +6,14 @@ sealed interface ToolCallUiEvent {
     val functionName: String
     val arguments: String
 
+    /** The user-visible name of the app providing the function, if known. */
+    val appLabel: String?
+
     data class Started(
         override val toolCallId: String?,
         override val functionName: String,
         override val arguments: String,
+        override val appLabel: String? = null,
     ) : ToolCallUiEvent
 
     data class Completed(
@@ -17,6 +21,7 @@ sealed interface ToolCallUiEvent {
         override val functionName: String,
         override val arguments: String,
         val result: String,
+        override val appLabel: String? = null,
     ) : ToolCallUiEvent
 
     data class Failed(
@@ -24,6 +29,7 @@ sealed interface ToolCallUiEvent {
         override val functionName: String,
         override val arguments: String,
         val error: String,
+        override val appLabel: String? = null,
     ) : ToolCallUiEvent
 }
 
@@ -40,6 +46,7 @@ data class ToolCallUiModel(
     val status: ToolCallStatus,
     val result: String? = null,
     val error: String? = null,
+    val appLabel: String? = null,
 )
 
 /** Immutable, chronological state for tool-call cards. */
@@ -51,6 +58,7 @@ data class ToolCallUiState(val calls: List<ToolCallUiModel> = emptyList()) {
                 functionName = event.functionName,
                 arguments = event.arguments,
                 status = ToolCallStatus.Running,
+                appLabel = event.appLabel,
             ),
         )
 
@@ -93,6 +101,7 @@ data class ToolCallUiState(val calls: List<ToolCallUiModel> = emptyList()) {
                     status = status,
                     result = result,
                     error = error,
+                    appLabel = event.appLabel,
                 ),
             )
         }
