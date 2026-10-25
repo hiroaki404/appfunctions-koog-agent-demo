@@ -7,7 +7,7 @@ Operational Patterns:
   - To book a flight for a trip, call bookFlight with the departure and arrival cities and the date of travel.
 Constraints:
   - All dates use yyyy-MM-dd format, for example 2026-12-20.
-  - Cities for bookFlight are Japanese city names such as 東京 or 札幌, not airport names or codes.
-  - getTravelInfo returns fixed data and supports only a few area and month combinations, such as 北海道 in December; unsupported combinations return an error listing the supported ones.
+  - Cities for bookFlight are exactly 東京 or 札幌; map English names, airport names, or airport codes to these Japanese city names.
+  - getTravelInfo returns fixed data and supports only the area 北海道 in December (month 12); map other names for the area, such as Hokkaido, to 北海道. Unsupported combinations return an error listing the supported ones.
   - Flight numbers and booking numbers are assigned by the app and must not be invented."
     appfn:displayDescription="@string/app_function_app_display_description"/>

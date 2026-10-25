@@ -17,14 +17,9 @@ object TravelRules {
         false
     }
 
-    private val areaAliases = mapOf(
-        "北海道" to "北海道",
-        "hokkaido" to "北海道",
-        "札幌" to "北海道",
-        "sapporo" to "北海道",
-        "沖縄" to "沖縄",
-        "okinawa" to "沖縄",
-    )
+    // Area and city names must match exactly (only surrounding whitespace is ignored). Other names
+    // for the same place, such as "Hokkaido" or an airport name, are left to the calling LLM: the
+    // AppFunction descriptions list the accepted names and ask it to map to them.
 
     private val travelInfo: Map<Pair<String, Int>, List<Spot>> = mapOf(
         ("北海道" to 12) to listOf(
@@ -34,11 +29,6 @@ object TravelRules {
             Spot("定山渓温泉", "札幌近郊の温泉地。雪見の露天風呂でゆっくり過ごせる。"),
             Spot("札幌ラーメン横丁", "すすきのにあるラーメン店街。味噌ラーメンで体を温められる。"),
         ),
-        ("沖縄" to 7) to listOf(
-            Spot("美ら海水族館", "巨大水槽でジンベエザメが泳ぐ沖縄を代表する水族館。"),
-            Spot("古宇利島", "古宇利大橋で渡れる離島。夏はエメラルドグリーンの海が楽しめる。"),
-            Spot("首里城公園", "琉球王国の歴史を伝える城跡。"),
-        ),
     )
 
     /** The `area / month` combinations [spotsFor] can answer, for error messages. */
@@ -46,39 +36,23 @@ object TravelRules {
         get() = travelInfo.keys.joinToString(", ") { (area, month) -> "$area / ${month}月" }
 
     /** Returns the fixed spots for [area] and [month], or null for an unsupported combination. */
-    fun spotsFor(area: String, month: Int): List<Spot>? {
-        val key = areaAliases[area.trim().lowercase(Locale.ROOT)] ?: return null
-        return travelInfo[key to month]
-    }
-
-    private val cityAliases = mapOf(
-        "東京" to "東京",
-        "tokyo" to "東京",
-        "札幌" to "札幌",
-        "sapporo" to "札幌",
-        "大阪" to "大阪",
-        "osaka" to "大阪",
-        "那覇" to "那覇",
-        "naha" to "那覇",
-    )
+    fun spotsFor(area: String, month: Int): List<Spot>? = travelInfo[area.trim() to month]
 
     private val flightNumbers = mapOf(
         ("東京" to "札幌") to "KT501",
         ("札幌" to "東京") to "KT502",
-        ("東京" to "大阪") to "KT101",
-        ("大阪" to "東京") to "KT102",
-        ("東京" to "那覇") to "KT301",
-        ("那覇" to "東京") to "KT302",
     )
 
-    /** The Japanese city names [normalizeCity] accepts, for error messages. */
+    private val cities = flightNumbers.keys.flatMap { it.toList() }.distinct()
+
+    /** The Japanese city names [isSupportedCity] accepts, for error messages. */
     val supportedCities: String
-        get() = flightNumbers.keys.flatMap { it.toList() }.distinct().joinToString("、")
+        get() = cities.joinToString("、")
 
-    /** Returns the canonical Japanese city name for [value], or null if the city is unsupported. */
-    fun normalizeCity(value: String): String? = cityAliases[value.trim().removeSuffix("市").lowercase(Locale.ROOT)]
+    /** Whether [city] is one of the Japanese city names flights are operated between. */
+    fun isSupportedCity(city: String): Boolean = city in cities
 
-    /** Returns the flight number for a normalized city pair, or null if no flight is operated. */
+    /** Returns the flight number for a city pair, or null if no flight is operated. */
     fun flightNumberFor(from: String, to: String): String? = flightNumbers[from to to]
 
     /** Every operated route as `東京→札幌 (KT501)` entries, for error messages. */

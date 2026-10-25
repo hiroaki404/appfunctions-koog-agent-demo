@@ -17,11 +17,12 @@ class TravelRulesTest {
         assertTrue(names.containsAll(listOf("さっぽろホワイトイルミネーション", "小樽運河", "旭山動物園")))
     }
 
+    /** Other names for the area are left to the calling LLM, which the getTravelInfo description asks to map them. */
     @Test
-    fun areaVariantsAreAcceptedLeniently() {
-        listOf("北海道", "Hokkaido", " hokkaido ", "札幌").forEach { area ->
-            assertNotNull(area, TravelRules.spotsFor(area, 12))
-        }
+    fun areaMustMatchTheJapaneseNameExactly() {
+        assertNotNull(TravelRules.spotsFor(" 北海道 ", 12))
+        assertNull(TravelRules.spotsFor("Hokkaido", 12))
+        assertNull(TravelRules.spotsFor("札幌", 12))
     }
 
     @Test
@@ -41,20 +42,22 @@ class TravelRulesTest {
         assertFalse(TravelRules.isValidDate(""))
     }
 
+    /** English and airport names are left to the calling LLM, which the bookFlight description asks to map them. */
     @Test
-    fun citiesAreNormalizedAndAirportsRejected() {
-        assertEquals("東京", TravelRules.normalizeCity("東京"))
-        assertEquals("東京", TravelRules.normalizeCity(" Tokyo "))
-        assertEquals("札幌", TravelRules.normalizeCity("札幌市"))
-        assertNull(TravelRules.normalizeCity("羽田空港"))
-        assertNull(TravelRules.normalizeCity("HND"))
+    fun onlyJapaneseCityNamesAreSupported() {
+        assertTrue(TravelRules.isSupportedCity("東京"))
+        assertTrue(TravelRules.isSupportedCity("札幌"))
+        assertFalse(TravelRules.isSupportedCity("Tokyo"))
+        assertFalse(TravelRules.isSupportedCity("羽田空港"))
+        assertFalse(TravelRules.isSupportedCity("CTS"))
+        assertEquals("東京、札幌", TravelRules.supportedCities)
     }
 
     @Test
     fun flightNumbersComeFromTheCityPairTable() {
         assertEquals("KT501", TravelRules.flightNumberFor("東京", "札幌"))
         assertEquals("KT502", TravelRules.flightNumberFor("札幌", "東京"))
-        assertNull(TravelRules.flightNumberFor("札幌", "那覇"))
+        assertNull(TravelRules.flightNumberFor("東京", "東京"))
     }
 
     @Test

@@ -96,7 +96,8 @@ class BaseKototabiAppFunctionServiceInstrumentedTest {
     fun bookFlightRejectsInvalidInput() {
         assertInvalidArgument { service.bookFlight("東京", "札幌", "2026/12/20") }
         assertInvalidArgument { service.bookFlight("羽田空港", "札幌", "2026-12-20") }
-        assertInvalidArgument { service.bookFlight("札幌", "那覇", "2026-12-20") }
+        assertInvalidArgument { service.bookFlight("Tokyo", "札幌", "2026-12-20") }
+        assertInvalidArgument { service.bookFlight("東京", "東京", "2026-12-20") }
     }
 
     @Test

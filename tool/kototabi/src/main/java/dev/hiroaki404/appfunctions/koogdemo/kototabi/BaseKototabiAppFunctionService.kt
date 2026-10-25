@@ -28,8 +28,9 @@ abstract class BaseKototabiAppFunctionService : AppFunctionService() {
     /**
      * Get recommended tourist spots for an area in a given month, from fixed travel guide data.
      *
-     * @param area The travel area in Japanese, for example "北海道". English names such as
-     *   "Hokkaido" are also accepted.
+     * @param area The travel area as its Japanese name, exactly "北海道" (the only supported area).
+     *   If the user names the area differently (for example "Hokkaido" or a city in it such as
+     *   "札幌"), pass "北海道" instead.
      * @param month The month of travel as a number from 1 through 12, for example 12 for December.
      * @return The recommended spots for that area and month.
      * @throws AppFunctionInvalidArgumentException If the area and month combination is not
@@ -93,10 +94,10 @@ abstract class BaseKototabiAppFunctionService : AppFunctionService() {
      *
      * The flight number and booking number are decided by the app and returned; do not make them up.
      *
-     * @param from The departure city as a Japanese city name, for example "東京". Use the city
-     *   name, not an airport name or airport code.
-     * @param to The arrival city as a Japanese city name, for example "札幌". Use the city name,
-     *   not an airport name or airport code.
+     * @param from The departure city, exactly "東京" or "札幌". If the user gives an English name,
+     *   an airport name, or an airport code (for example "Tokyo", "羽田空港", or "CTS"), pass the
+     *   Japanese city name instead.
+     * @param to The arrival city, exactly "東京" or "札幌", mapped the same way as [from].
      * @param date The departure date in `yyyy-MM-dd` format, for example "2026-12-20".
      * @return The confirmed booking, including the booking number and flight number.
      * @throws AppFunctionInvalidArgumentException If the date is not a valid `yyyy-MM-dd` date, a
@@ -113,9 +114,9 @@ abstract class BaseKototabiAppFunctionService : AppFunctionService() {
                 "date '$date' must be a valid date in yyyy-MM-dd format, for example 2026-12-20.",
             )
         }
-        val fromCity = TravelRules.normalizeCity(from)
+        val fromCity = from.trim().takeIf(TravelRules::isSupportedCity)
             ?: throw unsupportedCity("from", from)
-        val toCity = TravelRules.normalizeCity(to)
+        val toCity = to.trim().takeIf(TravelRules::isSupportedCity)
             ?: throw unsupportedCity("to", to)
         val flightNumber = TravelRules.flightNumberFor(fromCity, toCity)
             ?: throw AppFunctionInvalidArgumentException(
@@ -125,8 +126,8 @@ abstract class BaseKototabiAppFunctionService : AppFunctionService() {
     }
 
     private fun unsupportedCity(parameter: String, value: String) = AppFunctionInvalidArgumentException(
-        "$parameter '$value' is not a supported city. Use one of these Japanese city names " +
-            "(not airport names): ${TravelRules.supportedCities}.",
+        "$parameter '$value' is not a supported city. Use exactly one of these Japanese city names " +
+            "(not English or airport names): ${TravelRules.supportedCities}.",
     )
 
     private inline fun <T : Any> executeLogged(
