@@ -13,19 +13,9 @@ class ContactResolverTest {
     }
 
     @Test
-    fun stripsHonorifics() {
-        assertEquals("トム", resolveContact("トムくん")?.name)
-        assertEquals("トム", resolveContact("トム君")?.name)
-        assertEquals("花子", resolveContact("花子さん")?.name)
-        assertEquals("花子", resolveContact("花子ちゃん")?.name)
-        assertEquals("健太", resolveContact("健太様")?.name)
-        assertEquals("健太", resolveContact("健太さま")?.name)
-    }
-
-    @Test
     fun trimsWhitespaceIncludingFullWidthSpace() {
         assertEquals("トム", resolveContact("  トム  ")?.name)
-        assertEquals("トム", resolveContact("　トムくん　")?.name)
+        assertEquals("トム", resolveContact("　トム　")?.name)
     }
 
     @Test
@@ -36,10 +26,12 @@ class ContactResolverTest {
         assertEquals("健太", resolveContact("Kenta")?.name)
     }
 
+    /** Honorifics and nicknames are left to the calling LLM, which the sendMessage description asks to map them. */
     @Test
-    fun resolvesEnglishAliasWithHonorific() {
-        assertEquals("トム", resolveContact("Tomさん")?.name)
-        assertEquals("花子", resolveContact("Hanakoちゃん")?.name)
+    fun doesNotResolveHonorificsOrNicknames() {
+        assertNull(resolveContact("トムくん"))
+        assertNull(resolveContact("花子さん"))
+        assertNull(resolveContact("Tommy"))
     }
 
     @Test
@@ -47,11 +39,5 @@ class ContactResolverTest {
         assertNull(resolveContact("太郎"))
         assertNull(resolveContact(""))
         assertNull(resolveContact("   "))
-    }
-
-    @Test
-    fun honorificAloneDoesNotResolve() {
-        assertNull(resolveContact("くん"))
-        assertNull(resolveContact("さん"))
     }
 }

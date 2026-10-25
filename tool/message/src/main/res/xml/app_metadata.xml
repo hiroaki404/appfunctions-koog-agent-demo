@@ -4,6 +4,6 @@
 Operational Patterns:
   - sendMessage sends one text message to one contact per call.
 Constraints:
-  - The available contacts are トム (Tom), 花子 (Hanako), and 健太 (Kenta); honorifics such as くん, さん, ちゃん, and 様 are accepted.
+  - The available contacts are トム (Tom), 花子 (Hanako), and 健太 (Kenta). Pass one of these names exactly; map honorifics or nicknames (e.g. トムくん) to the closest listed name.
   - Messages are only recorded in the app and are not delivered to real people."
     appfn:displayDescription="@string/app_function_app_display_description"/>

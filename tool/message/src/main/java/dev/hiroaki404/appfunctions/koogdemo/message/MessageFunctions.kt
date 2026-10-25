@@ -23,15 +23,20 @@ abstract class BaseMessageAppFunctionService : AppFunctionService() {
     protected open val messageRepository: MessageRepository
         get() = (application as MessageApplication).messageRepository
 
+    // TODO: The contact names below are hardcoded copies of demoContacts so the LLM knows the valid
+    //  recipients. A real messaging app has per-user, changing contacts that can't be written into a
+    //  build-time description: expose them through an AppFunction (e.g. listContacts/searchContacts),
+    //  tell the LLM here to pass a name returned by it, and let the LLM map honorifics or nicknames to
+    //  the closest one. Kept out of the KDoc on purpose, since the KDoc is sent to the LLM.
     /**
      * Send a text message to one of the contacts saved in this app.
      *
      * The message is only recorded in the app's history and shown on screen; nothing is
      * delivered to a real person.
      *
-     * @param contactName The recipient's name. The available contacts are トム (Tom), 花子
-     *   (Hanako), and 健太 (Kenta). Honorifics such as くん, さん, ちゃん, and 様 are accepted
-     *   (for example "トムくん"), and English names are case-insensitive.
+     * @param contactName The recipient, exactly as one of the listed names: トム, 花子, 健太, or
+     *   their English names Tom, Hanako, Kenta. If the user refers to a contact with an honorific
+     *   or a nickname (for example "トムくん"), pass the closest listed name instead (here "トム").
      * @param text The message body. It must not be blank.
      * @return A short result such as "トムに送信しました".
      * @throws AppFunctionInvalidArgumentException If the contact is not one of the available
