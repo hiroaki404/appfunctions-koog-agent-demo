@@ -12,8 +12,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * 保存用の旅程。デモなので簡単にするため、日ごとのスポットは [daysJson] の1列にまとめて保存している。
- * 実プロダクトでは、日とスポットを別テーブルに正規化し、`@Relation` で読み出すべき。
+ * A stored itinerary. To keep the demo simple, the days and their spots are stored together in the
+ * single [daysJson] column. A real product should normalize days and spots into separate tables and
+ * read them with `@Relation`.
  */
 @Entity(tableName = ItineraryEntity.TABLE_NAME)
 data class ItineraryEntity(
