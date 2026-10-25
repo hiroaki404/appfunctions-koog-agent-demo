@@ -16,7 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class KototabiFunctionsInstrumentedTest {
+class BaseKototabiAppFunctionServiceInstrumentedTest {
     private lateinit var database: KototabiDatabase
     private lateinit var repository: KototabiRepository
     private lateinit var service: BaseKototabiAppFunctionService
@@ -31,7 +31,7 @@ class KototabiFunctionsInstrumentedTest {
                 override fun succeeded(functionName: String, arguments: String, result: Any) = Unit
                 override fun failed(functionName: String, arguments: String, error: Exception) = Unit
             }
-            override val repository: KototabiRepository = this@KototabiFunctionsInstrumentedTest.repository
+            override val repository: KototabiRepository = this@BaseKototabiAppFunctionServiceInstrumentedTest.repository
 
             override fun onExecuteFunction(
                 request: androidx.appfunctions.ExecuteAppFunctionRequest,
