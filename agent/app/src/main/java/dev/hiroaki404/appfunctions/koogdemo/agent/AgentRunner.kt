@@ -12,7 +12,7 @@ import ai.koog.prompt.llm.LLMProvider
 import ai.koog.serialization.kotlinx.toKotlinxJsonObject
 import android.util.Log
 import androidx.appfunctions.AppFunctionManager
-import kotlinx.coroutines.flow.first
+import androidx.appfunctions.metadata.AppFunctionMetadata
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
@@ -26,18 +26,21 @@ private data class ToolSource(val functionName: String, val appLabel: String?)
  * Runs one turn of a Koog agent with tools discovered at runtime. A new [AIAgent] is created for every
  * call, per the demo's "one agent per message" approach; conversation
  * continuity comes from [chatHistoryProvider] and [sessionId], which the caller keeps across calls.
+ * [appFunctions] is the latest list from [discoverAppFunctions], so a function installed since the
+ * previous call is already a tool here.
  * [appLabelOf] turns a provider app's package name into its user-visible name for tool-call events.
  */
 suspend fun runAgent(
     apiKey: String,
     appFunctionManager: AppFunctionManager,
+    appFunctions: List<AppFunctionMetadata>,
     prompt: String,
     chatHistoryProvider: ChatHistoryProvider,
     sessionId: String,
     appLabelOf: (packageName: String) -> String? = { null },
     onToolCallEvent: suspend (ToolCallUiEvent) -> Unit = {},
 ): String {
-    val discovered = appFunctionManager.discoverAppFunctions().first().mapNotNull { metadata ->
+    val discovered = appFunctions.mapNotNull { metadata ->
         runCatching {
             val descriptor = metadata.toToolDescriptor()
             metadata to AppFunctionTool(appFunctionManager, metadata, descriptor)

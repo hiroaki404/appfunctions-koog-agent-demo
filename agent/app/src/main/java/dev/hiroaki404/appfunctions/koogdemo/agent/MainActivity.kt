@@ -3,6 +3,7 @@ package dev.hiroaki404.appfunctions.koogdemo.agent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -48,6 +49,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,10 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.AgentTheme
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Bg
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink
@@ -75,7 +74,6 @@ import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Sea
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.SeaC
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Surface
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Surface2
-import kotlinx.coroutines.launch
 
 private const val TAG = "AppFunctionDiscovery"
 
@@ -85,30 +83,35 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val appFunctionManager = viewModel.appFunctionManager
-        if (appFunctionManager == null) {
+        if (viewModel.appFunctionManager == null) {
             Log.w(TAG, "AppFunctions is not supported on this device")
-        } else {
-            lifecycleScope.launch {
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    appFunctionManager.discoverAppFunctions().collect { functions ->
-                        Log.d(TAG, "Found ${functions.size} app functions")
-                        functions.forEach { function ->
-                            val params = function.parameters.joinToString { "${it.name}: ${it.dataType}" }
-                            Log.d(TAG, "${function.id}($params) - ${function.description}")
-                        }
-                    }
-                }
-            }
         }
         setContent {
             AgentTheme {
+                var showTools by rememberSaveable { mutableStateOf(false) }
+                fun closeTools() {
+                    showTools = false
+                    viewModel.acknowledgeNewTools()
+                }
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AgentChatScreen(
-                        viewModel = viewModel,
-                        // Edge-to-edge ignores adjustResize, so keep the input row above the keyboard explicitly.
-                        modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding).imePadding(),
-                    )
+                    val contentModifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
+                    if (showTools) {
+                        BackHandler(onBack = ::closeTools)
+                        val availableTools by viewModel.availableTools.collectAsStateWithLifecycle()
+                        ToolListScreen(
+                            state = availableTools,
+                            providerAppOf = viewModel::providerAppOf,
+                            onBack = ::closeTools,
+                            modifier = contentModifier,
+                        )
+                    } else {
+                        AgentChatScreen(
+                            viewModel = viewModel,
+                            onOpenTools = { showTools = true },
+                            // Edge-to-edge ignores adjustResize, so keep the input row above the keyboard explicitly.
+                            modifier = contentModifier.imePadding(),
+                        )
+                    }
                 }
             }
         }
@@ -116,9 +119,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AgentChatScreen(viewModel: AgentViewModel, modifier: Modifier = Modifier) {
+fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier: Modifier = Modifier) {
     val turns by viewModel.turns.collectAsStateWithLifecycle()
     val isRunning by viewModel.isRunning.collectAsStateWithLifecycle()
+    val availableTools by viewModel.availableTools.collectAsStateWithLifecycle()
     var prompt by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
@@ -135,8 +139,11 @@ fun AgentChatScreen(viewModel: AgentViewModel, modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("旅行プランナー", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-            TextButton(onClick = viewModel::newConversation) {
-                Text("新しい会話", color = Sea, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                ToolCountPill(state = availableTools, onClick = onOpenTools)
+                TextButton(onClick = viewModel::newConversation) {
+                    Text("新しい会話", color = Sea, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
         LazyColumn(
