@@ -36,7 +36,7 @@ fun toolNameOf(metadata: AppFunctionMetadata): String {
 
 fun AppFunctionMetadata.toToolDescriptor(toolName: String = toolNameOf(this)): ToolDescriptor {
     fun descriptor(parameter: AppFunctionParameterMetadata) =
-        ToolParameterDescriptor(parameter.name, parameter.description, parameter.dataType.toToolParameterType(components))
+        ToolParameterDescriptor(parameter.name, parameter.description, parameter.dataType.toToolParameterType(packageMetadata.components))
 
     return ToolDescriptor(
         name = toolName,

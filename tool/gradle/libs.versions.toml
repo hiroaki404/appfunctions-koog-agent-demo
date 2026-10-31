@@ -8,7 +8,7 @@ lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
 kotlin = "2.3.10"
 composeBom = "2026.02.01"
-appfunctions = "1.0.0-alpha11"
+appfunctions = "1.0.0-beta01"
 ksp = "2.3.10"
 room = "2.8.4"
 kotlinxSerializationJson = "1.11.0"
@@ -34,7 +34,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
-# appfunctions-service was removed in 1.0.0-alpha10; @AppFunction methods now live inside an
+# appfunctions-service was removed in 1.0.0-alpha10; @AppFunctionDeclaration methods now live inside an
 # AppFunctionService subclass annotated with @AppFunctionServiceEntryPoint (both from this
 # artifact directly).
 appfunctions = { group = "androidx.appfunctions", name = "appfunctions", version.ref = "appfunctions" }

@@ -41,7 +41,7 @@ class AppFunctionTool(
     descriptor: ToolDescriptor,
 ) : Tool<JSONObject, String>(typeToken<JSONObject>(), typeToken<String>(), descriptor) {
     override suspend fun execute(args: JSONObject): String = try {
-        val parameters = AppFunctionData.Builder(appFunctionMetadata.parameters, appFunctionMetadata.components).also { builder ->
+        val parameters = AppFunctionData.Builder(appFunctionMetadata.parameters, appFunctionMetadata.packageMetadata.components).also { builder ->
             args.toKotlinxJsonObject().forEach { (name, value) ->
                 val type = appFunctionMetadata.parameters.firstOrNull { it.name == name }?.dataType ?: return@forEach
                 if (value !is JsonNull) builder.setJsonValue(name, value, type)
@@ -89,14 +89,14 @@ class AppFunctionTool(
     }
 
     private fun objectData(json: JsonObject, type: AppFunctionObjectTypeMetadata): AppFunctionData =
-        AppFunctionData.Builder(type, appFunctionMetadata.components).also { builder ->
+        AppFunctionData.Builder(type, appFunctionMetadata.packageMetadata.components).also { builder ->
             json.forEach { (name, value) -> type.properties[name]?.let { propertyType ->
                 if (value !is JsonNull) builder.setJsonValue(name, value, propertyType)
             } }
         }.build()
 
     private fun resolve(type: AppFunctionDataTypeMetadata): AppFunctionDataTypeMetadata =
-        if (type is AppFunctionReferenceTypeMetadata) appFunctionMetadata.components.dataTypes[type.referenceDataType]
+        if (type is AppFunctionReferenceTypeMetadata) appFunctionMetadata.packageMetadata.components.dataTypes[type.referenceDataType]
             ?: throw UnsupportedAppFunctionTypeException("Unknown AppFunction type reference: ${type.referenceDataType}") else type
 
     private fun valueToJson(data: AppFunctionData, key: String, type: AppFunctionDataTypeMetadata): JsonElement = when (type) {

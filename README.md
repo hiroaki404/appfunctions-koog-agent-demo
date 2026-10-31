@@ -35,8 +35,8 @@ agent/      Discovers whatever AppFunctions are installed on the device, convert
 Key files:
 
 - `tool/kototabi/src/main/java/.../BaseKototabiAppFunctionService.kt` and
-  `tool/message/src/main/java/.../BaseMessageAppFunctionService.kt` — the `@AppFunction`
-  declarations, each inside an `AppFunctionService` per the `androidx.appfunctions` 1.0.0-alpha10+
+  `tool/message/src/main/java/.../BaseMessageAppFunctionService.kt` — the `@AppFunctionDeclaration`
+  declarations, each inside an `AppFunctionService` per the `androidx.appfunctions` 1.0.0-beta01
   API. The kototabi functions use nested `@AppFunctionSerializable` types
   (`Itinerary` → `ItineraryDay` → `Spot`) as both arguments and return values.
 - `agent/app/src/main/java/.../AppFunctionDiscovery.kt` — subscribes to

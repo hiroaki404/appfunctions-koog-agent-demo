@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
-    appfn:description="Travel planning app that stores the user's trip itineraries (including trips taken in the past) and books flights.
+    appfn:instructions="Travel planning app that stores the user's trip itineraries (including trips taken in the past) and books flights.
 Operational Patterns:
   - To recall a past trip or the trip being planned, call searchItineraries; past versus upcoming is judged by the dates of each itinerary's days compared with today's date.
   - To plan a new trip, call getTravelInfo for recommended spots, then call saveItinerary with the chosen spots grouped by day.

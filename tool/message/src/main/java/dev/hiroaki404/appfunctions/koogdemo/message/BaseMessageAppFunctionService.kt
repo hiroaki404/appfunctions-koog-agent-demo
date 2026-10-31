@@ -1,6 +1,6 @@
 package dev.hiroaki404.appfunctions.koogdemo.message
 
-import androidx.appfunctions.AppFunction
+import androidx.appfunctions.AppFunctionDeclaration
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionService
 import androidx.appfunctions.AppFunctionServiceEntryPoint
@@ -42,7 +42,7 @@ abstract class BaseMessageAppFunctionService : AppFunctionService() {
      * @throws AppFunctionInvalidArgumentException If the contact is not one of the available
      *   contacts or the text is blank. Correct the contact name or text and retry.
      */
-    @AppFunction(isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isDescribedByKDoc = true)
     fun sendMessage(contactName: String, text: String): String = executeLogged(
         "sendMessage",
         "contactName=$contactName, text=$text",

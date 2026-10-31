@@ -2,7 +2,7 @@ package dev.hiroaki404.appfunctions.koogdemo.agent
 
 import androidx.appfunctions.AppFunctionManager
 import androidx.appfunctions.AppFunctionSearchSpec
-import androidx.appfunctions.ObserveAppFunctionsEvent
+import androidx.appfunctions.AppFunctionsChangeEvent
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.onStart
  */
 fun AppFunctionManager.discoverAppFunctions(): Flow<List<AppFunctionMetadata>> =
     observeAppFunctions()
-        .filterIsInstance<ObserveAppFunctionsEvent.MetadataChanged>()
+        .filterIsInstance<AppFunctionsChangeEvent.MetadataChanged>()
         .map { }
         .onStart { emit(Unit) }
         .map { searchAppFunctions(AppFunctionSearchSpec()) }

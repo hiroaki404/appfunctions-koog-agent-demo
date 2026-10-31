@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
-    appfn:description="Messaging app with a fixed set of contacts that records sent messages.
+    appfn:instructions="Messaging app with a fixed set of contacts that records sent messages.
 Operational Patterns:
   - sendMessage sends one text message to one contact per call.
 Constraints:

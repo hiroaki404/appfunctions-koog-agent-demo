@@ -1,6 +1,7 @@
 package dev.hiroaki404.appfunctions.koogdemo.agent
 
 import ai.koog.agents.core.tools.ToolParameterType
+import androidx.appfunctions.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
@@ -8,6 +9,7 @@ import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
@@ -141,12 +143,10 @@ class AppFunctionSchemaConverterTest {
         parameters: List<AppFunctionParameterMetadata>,
         components: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(),
     ) = AppFunctionMetadata(
-        id = id,
-        packageName = "example.tool",
-        isEnabled = true,
+        name = AppFunctionName("example.tool", id),
         schema = null,
         parameters = parameters,
         response = AppFunctionResponseMetadata(AppFunctionLongTypeMetadata(false)),
-        components = components,
+        packageMetadata = AppFunctionPackageMetadata("example.tool", components),
     )
 }

@@ -1,6 +1,6 @@
 package dev.hiroaki404.appfunctions.koogdemo.kototabi
 
-import androidx.appfunctions.AppFunction
+import androidx.appfunctions.AppFunctionDeclaration
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionService
 import androidx.appfunctions.AppFunctionServiceEntryPoint
@@ -36,7 +36,7 @@ abstract class BaseKototabiAppFunctionService : AppFunctionService() {
      * @throws AppFunctionInvalidArgumentException If the area and month combination is not
      *   supported. The message lists the supported combinations; choose one of them and retry.
      */
-    @AppFunction(isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isDescribedByKDoc = true)
     suspend fun getTravelInfo(area: String, month: Int): List<Spot> = executeLogged(
         "getTravelInfo",
         "area=$area, month=$month",
@@ -60,7 +60,7 @@ abstract class BaseKototabiAppFunctionService : AppFunctionService() {
      * @throws AppFunctionInvalidArgumentException If the title is blank, there are no days, a date
      *   is not a valid `yyyy-MM-dd` date, or a spot name is blank. Correct the value and retry.
      */
-    @AppFunction(isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isDescribedByKDoc = true)
     suspend fun saveItinerary(itinerary: Itinerary): String = executeLogged(
         "saveItinerary",
         "itinerary=$itinerary",
@@ -81,7 +81,7 @@ abstract class BaseKototabiAppFunctionService : AppFunctionService() {
      *   string, to list all saved itineraries.
      * @return The matching itineraries, which may be empty.
      */
-    @AppFunction(isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isDescribedByKDoc = true)
     suspend fun searchItineraries(keyword: String? = null): List<Itinerary> = executeLogged(
         "searchItineraries",
         "keyword=$keyword",
@@ -104,7 +104,7 @@ abstract class BaseKototabiAppFunctionService : AppFunctionService() {
      *   city is not supported, or no flight is operated between the cities. The message lists the
      *   supported cities or routes; correct the input and retry.
      */
-    @AppFunction(isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isDescribedByKDoc = true)
     suspend fun bookFlight(from: String, to: String, date: String): FlightBooking = executeLogged(
         "bookFlight",
         "from=$from, to=$to, date=$date",
