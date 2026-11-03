@@ -10,9 +10,9 @@ build time.
 > fly, and lets an LLM (Gemini) decide which one to call — without the agent app ever having seen
 > those functions at compile time.
 
-The scenario: a travel app (**kototabi**) and a messaging app each publish AppFunctions. The agent
-looks up your past trips in kototabi, plans and saves a new itinerary, books a flight, and asks a
-friend over the messaging app — calling functions across both apps.
+The scenario: a travel app and a messaging app each publish AppFunctions. The agent looks up your
+past trips in the travel app, plans and saves a new itinerary, books a flight, and asks a friend
+over the messaging app — calling functions across both apps.
 
 The punchline: with the messaging app **not** installed, the agent says it can't send a message.
 Install just that app, ask again, and the `agent` app — untouched, not rebuilt, not even
@@ -25,7 +25,7 @@ know about the tool apps at build time).
 
 ```
 tool/       One Gradle project with two independent app modules that publish AppFunctions:
-  kototabi/   Travel app: getTravelInfo, saveItinerary, searchItineraries, bookFlight
+  trip/       Travel app: getTravelInfo, saveItinerary, searchItineraries, bookFlight
               (itineraries and bookings are stored with Room).
   message/    Messaging app: sendMessage (messages are only recorded and shown in the app).
 agent/      Discovers whatever AppFunctions are installed on the device, converts their metadata
@@ -34,10 +34,10 @@ agent/      Discovers whatever AppFunctions are installed on the device, convert
 
 Key files:
 
-- `tool/kototabi/src/main/java/.../BaseKototabiAppFunctionService.kt` and
+- `tool/trip/src/main/java/.../BaseTripAppFunctionService.kt` and
   `tool/message/src/main/java/.../BaseMessageAppFunctionService.kt` — the `@AppFunctionDeclaration`
   declarations, each inside an `AppFunctionService` per the `androidx.appfunctions` 1.0.0-beta01
-  API. The kototabi functions use nested `@AppFunctionSerializable` types
+  API. The travel app's functions use nested `@AppFunctionSerializable` types
   (`Itinerary` → `ItineraryDay` → `Spot`) as both arguments and return values.
 - `agent/app/src/main/java/.../AppFunctionDiscovery.kt` — subscribes to
   `AppFunctionManager.observeAppFunctions()`, re-querying whenever any app's metadata changes.
@@ -74,19 +74,19 @@ GEMINI_API_KEY=your-api-key-here
 
 ```sh
 cd tool
-./gradlew :kototabi:assembleDebug :message:assembleDebug
-adb install -r kototabi/build/outputs/apk/debug/kototabi-debug.apk
+./gradlew :trip:assembleDebug :message:assembleDebug
+adb install -r trip/build/outputs/apk/debug/trip-debug.apk
 adb install -r message/build/outputs/apk/debug/message-debug.apk
 ```
 
 Verify the functions are published (the command lists every app's functions; look for
-`BaseKototabiAppFunctionService#...` and `BaseMessageAppFunctionService#sendMessage`):
+`BaseTripAppFunctionService#...` and `BaseMessageAppFunctionService#sendMessage`):
 
 ```sh
 adb shell cmd app_function list-app-functions | grep koogdemo
 ```
 
-kototabi seeds a past trip ("2025年夏の北海道") when its database is first created. Its screen has debug buttons to
+The travel app seeds a past trip ("2025年夏の北海道") when its database is first created. Its screen has debug buttons to
 insert the upcoming December trip and to reset to the initial state.
 
 ### 3. Build `agent`
@@ -149,7 +149,7 @@ redone).
 ## Running the demo
 
 Send the messages below in one conversation. While the agent runs, each Koog tool call appears in
-the UI with its function name, arguments, status, and result (or error); kototabi and the
+the UI with its function name, arguments, status, and result (or error); the travel app and the
 messaging app update their screens as soon as a function writes to them.
 
 | # | Message | Expected tool calls |

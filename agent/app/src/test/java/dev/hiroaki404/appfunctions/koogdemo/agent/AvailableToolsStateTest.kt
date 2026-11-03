@@ -46,7 +46,7 @@ class AvailableToolsStateTest {
     fun groupsPutUserAppsBeforeSystemAppsAndMarkNewOnes() {
         val apps = mapOf(
             "settings" to ProviderApp("設定", isSystem = true),
-            "travel" to ProviderApp("kototabi", isSystem = false),
+            "travel" to ProviderApp("旅行", isSystem = false),
             "message" to ProviderApp("メッセージ", isSystem = false),
         )
         val groups = AvailableToolsState()
@@ -54,8 +54,8 @@ class AvailableToolsStateTest {
             .update(listOf(battery, bookFlight, sendMessage))
             .groups { apps.getValue(it) }
 
-        assertEquals(listOf("travel", "message", "settings"), groups.map { it.packageName })
-        assertEquals(listOf(false, true, false), groups.map { it.hasNew })
+        assertEquals(listOf("message", "travel", "settings"), groups.map { it.packageName })
+        assertEquals(listOf(true, false, false), groups.map { it.hasNew })
     }
 
     @Test
