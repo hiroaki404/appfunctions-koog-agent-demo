@@ -35,6 +35,7 @@ class BaseTripAppFunctionServiceInstrumentedTest {
 
             override fun onExecuteFunction(
                 request: androidx.appfunctions.ExecuteAppFunctionRequest,
+                metadata: androidx.appfunctions.metadata.AppFunctionMetadata,
                 cancellationSignal: android.os.CancellationSignal,
                 callback: java.util.function.Consumer<androidx.appfunctions.ExecuteAppFunctionResponse>,
             ) = error("This instrumentation test invokes the service methods directly.")
@@ -60,7 +61,7 @@ class BaseTripAppFunctionServiceInstrumentedTest {
     }
 
     @Test
-    fun saveItineraryReturnsDistinctIdsAndRejectsInvalidDate() = runBlocking {
+    fun saveItineraryReturnsDistinctIdsAndRejectsInvalidDate() = runBlocking<Unit> {
         val first = service.saveItinerary(TripSeed.pastTrip)
         val second = service.saveItinerary(TripSeed.upcomingTrip)
         assertEquals(false, first == second)
