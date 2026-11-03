@@ -55,15 +55,15 @@ class TravelRulesTest {
 
     @Test
     fun flightNumbersComeFromTheCityPairTable() {
-        assertEquals("KT501", TravelRules.flightNumberFor("東京", "札幌"))
-        assertEquals("KT502", TravelRules.flightNumberFor("札幌", "東京"))
+        assertEquals("TR501", TravelRules.flightNumberFor("東京", "札幌"))
+        assertEquals("TR502", TravelRules.flightNumberFor("札幌", "東京"))
         assertNull(TravelRules.flightNumberFor("東京", "東京"))
     }
 
     @Test
     fun bookingIdIsZeroPaddedSequence() {
-        assertEquals("KTB-0001", TravelRules.bookingId(1))
-        assertEquals("KTB-0042", TravelRules.bookingId(42))
+        assertEquals("TRP-0001", TravelRules.bookingId(1))
+        assertEquals("TRP-0042", TravelRules.bookingId(42))
     }
 
     @Test

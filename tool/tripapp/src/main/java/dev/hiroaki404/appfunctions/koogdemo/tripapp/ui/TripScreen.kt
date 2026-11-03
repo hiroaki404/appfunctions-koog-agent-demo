@@ -307,8 +307,8 @@ private fun TripScreenPreview() {
                     SavedItinerary(TripSeed.pastTrip, addedByAi = false),
                 ),
                 flightBookings = listOf(
-                    SavedFlightBooking(FlightBooking("KTB-0001", "KT501", "東京", "札幌", "2026-12-20"), addedByAi = true),
-                    SavedFlightBooking(FlightBooking("KTB-0002", "KT502", "札幌", "東京", "2026-12-22"), addedByAi = false),
+                    SavedFlightBooking(FlightBooking("TRP-0001", "TR501", "東京", "札幌", "2026-12-20"), addedByAi = true),
+                    SavedFlightBooking(FlightBooking("TRP-0002", "TR502", "札幌", "東京", "2026-12-22"), addedByAi = false),
                 ),
             ),
             onSeedUpcomingTrip = {},

@@ -77,8 +77,8 @@ class BaseTripAppFunctionServiceInstrumentedTest {
         val first = service.bookFlight("東京", "札幌", "2026-12-20")
         val second = service.bookFlight("札幌", "東京", "2026-12-22")
 
-        assertEquals(FlightBooking("KTB-0001", "KT501", "東京", "札幌", "2026-12-20"), first)
-        assertEquals("KTB-0002", second.bookingId)
+        assertEquals(FlightBooking("TRP-0001", "TR501", "東京", "札幌", "2026-12-20"), first)
+        assertEquals("TRP-0002", second.bookingId)
         assertEquals(listOf(first, second), repository.flightBookings.first())
     }
 

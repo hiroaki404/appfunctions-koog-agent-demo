@@ -29,7 +29,7 @@ data class ItineraryEntity(
     }
 }
 
-/** A booked flight. [sequence] is the number behind the booking id, such as 1 for `KTB-0001`. */
+/** A booked flight. [sequence] is the number behind the booking id, such as 1 for `TRP-0001`. */
 @Entity(tableName = FlightBookingEntity.TABLE_NAME)
 data class FlightBookingEntity(
     @PrimaryKey val sequence: Int,

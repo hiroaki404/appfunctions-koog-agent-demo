@@ -39,8 +39,8 @@ object TravelRules {
     fun spotsFor(area: String, month: Int): List<Spot>? = travelInfo[area.trim() to month]
 
     private val flightNumbers = mapOf(
-        ("東京" to "札幌") to "KT501",
-        ("札幌" to "東京") to "KT502",
+        ("東京" to "札幌") to "TR501",
+        ("札幌" to "東京") to "TR502",
     )
 
     private val cities = flightNumbers.keys.flatMap { it.toList() }.distinct()
@@ -55,14 +55,14 @@ object TravelRules {
     /** Returns the flight number for a city pair, or null if no flight is operated. */
     fun flightNumberFor(from: String, to: String): String? = flightNumbers[from to to]
 
-    /** Every operated route as `東京→札幌 (KT501)` entries, for error messages. */
+    /** Every operated route as `東京→札幌 (TR501)` entries, for error messages. */
     val supportedRoutes: String
         get() = flightNumbers.entries.joinToString(", ") { (route, number) ->
             "${route.first}→${route.second} ($number)"
         }
 
-    /** Formats the sequence number assigned by the app as a booking id, for example `KTB-0001`. */
-    fun bookingId(sequence: Int): String = "KTB-%04d".format(Locale.ROOT, sequence)
+    /** Formats the sequence number assigned by the app as a booking id, for example `TRP-0001`. */
+    fun bookingId(sequence: Int): String = "TRP-%04d".format(Locale.ROOT, sequence)
 
     /**
      * Whether [itinerary] matches [keyword] by case-insensitive partial match on the title or any

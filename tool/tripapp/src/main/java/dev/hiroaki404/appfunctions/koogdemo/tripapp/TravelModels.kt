@@ -35,9 +35,9 @@ data class Itinerary(
 /** A confirmed flight booking. */
 @AppFunctionSerializable(isDescribedByKDoc = true)
 data class FlightBooking(
-    /** The booking number assigned by the app, for example "KTB-0001". */
+    /** The booking number assigned by the app, for example "TRP-0001". */
     val bookingId: String,
-    /** The flight number assigned by the app, for example "KT501". */
+    /** The flight number assigned by the app, for example "TR501". */
     val flightNumber: String,
     /** The departure city in Japanese, for example "東京". */
     val from: String,
