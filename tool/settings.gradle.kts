@@ -23,5 +23,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "tool"
-include(":trip")
+include(":tripapp")
 include(":message")

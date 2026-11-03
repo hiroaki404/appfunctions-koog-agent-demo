@@ -25,7 +25,7 @@ know about the tool apps at build time).
 
 ```
 tool/       One Gradle project with two independent app modules that publish AppFunctions:
-  trip/       Travel app: getTravelInfo, saveItinerary, searchItineraries, bookFlight
+  tripapp/    Travel app: getTravelInfo, saveItinerary, searchItineraries, bookFlight
               (itineraries and bookings are stored with Room).
   message/    Messaging app: sendMessage (messages are only recorded and shown in the app).
 agent/      Discovers whatever AppFunctions are installed on the device, converts their metadata
@@ -34,7 +34,7 @@ agent/      Discovers whatever AppFunctions are installed on the device, convert
 
 Key files:
 
-- `tool/trip/src/main/java/.../BaseTripAppFunctionService.kt` and
+- `tool/tripapp/src/main/java/.../BaseTripAppFunctionService.kt` and
   `tool/message/src/main/java/.../BaseMessageAppFunctionService.kt` — the `@AppFunctionDeclaration`
   declarations, each inside an `AppFunctionService` per the `androidx.appfunctions` 1.0.0-beta01
   API. The travel app's functions use nested `@AppFunctionSerializable` types
@@ -74,8 +74,8 @@ GEMINI_API_KEY=your-api-key-here
 
 ```sh
 cd tool
-./gradlew :trip:assembleDebug :message:assembleDebug
-adb install -r trip/build/outputs/apk/debug/trip-debug.apk
+./gradlew :tripapp:assembleDebug :message:assembleDebug
+adb install -r tripapp/build/outputs/apk/debug/tripapp-debug.apk
 adb install -r message/build/outputs/apk/debug/message-debug.apk
 ```
 
