@@ -5,10 +5,6 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-ksp {
-    arg("appfunctions:aggregateAppFunctions", "true")
-}
-
 android {
     namespace = "dev.hiroaki404.appfunctions.koogdemo.tripapp"
     compileSdk {
