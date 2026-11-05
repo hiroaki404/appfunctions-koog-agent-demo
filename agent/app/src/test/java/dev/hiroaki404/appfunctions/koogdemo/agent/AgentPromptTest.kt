@@ -26,4 +26,20 @@ class AgentPromptTest {
         assertTrue(prompt.contains("ツール"))
         assertTrue(prompt.contains("できない"))
     }
+
+    @Test
+    fun includesAppInstructionsUnderTheirAppLabels() {
+        val prompt = buildSystemPrompt(
+            LocalDate.of(2026, 10, 25),
+            listOf(AppInstructions("アプリA", "Call a before b."), AppInstructions("アプリB", "Limit: 5.")),
+        )
+
+        assertTrue(prompt.contains("### アプリA\nCall a before b."))
+        assertTrue(prompt.contains("### アプリB\nLimit: 5."))
+    }
+
+    @Test
+    fun omitsAppInstructionsSectionWhenThereAreNone() {
+        assertFalse(buildSystemPrompt(LocalDate.of(2026, 10, 25)).contains("各アプリの説明"))
+    }
 }

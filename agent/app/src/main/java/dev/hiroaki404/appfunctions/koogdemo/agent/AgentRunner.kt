@@ -13,6 +13,8 @@ import ai.koog.serialization.kotlinx.toKotlinxJsonObject
 import android.util.Log
 import androidx.appfunctions.AppFunctionManager
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
@@ -29,6 +31,8 @@ private data class ToolSource(val functionName: String, val appLabel: String?)
  * [appFunctions] is the latest list from [discoverAppFunctions], so a function installed since the
  * previous call is already a tool here.
  * [appLabelOf] turns a provider app's package name into its user-visible name for tool-call events.
+ * [appInstructionsOf] reads the app description of a function's provider app; it runs off the main
+ * thread, once per app, and the results are added to the system prompt.
  */
 suspend fun runAgent(
     apiKey: String,
@@ -38,6 +42,7 @@ suspend fun runAgent(
     chatHistoryProvider: ChatHistoryProvider,
     sessionId: String,
     appLabelOf: (packageName: String) -> String? = { null },
+    appInstructionsOf: (AppFunctionMetadata) -> String? = { null },
     onToolCallEvent: suspend (ToolCallUiEvent) -> Unit = {},
 ): String {
     val discovered = appFunctions.mapNotNull { metadata ->
@@ -56,6 +61,14 @@ suspend fun runAgent(
     }
     fun functionNameOf(toolName: String) = toolSources[toolName]?.functionName ?: toolName
     fun appLabelOfTool(toolName: String) = toolSources[toolName]?.appLabel
+    val appInstructions = withContext(Dispatchers.IO) {
+        discovered.map { (metadata, _) -> metadata }.distinctBy { it.packageName }.mapNotNull { metadata ->
+            appInstructionsOf(metadata)?.takeIf { it.isNotBlank() }?.let { instructions ->
+                AppInstructions(appLabelOf(metadata.packageName) ?: metadata.packageName, instructions)
+            }
+        }
+    }
+    Log.d("KoogAgent", "App instructions: $appInstructions")
     // koog-agents 1.2.0 has no stable simpleGoogleAIExecutor convenience function (it only ships
     // in prompt-executor-llms-all, which itself has no 1.2.0 release yet — see libs.versions.toml).
     // This mirrors what that helper does: MultiLLMPromptExecutor(LLMProvider.Google to GoogleLLMClient(apiKey)).
@@ -64,7 +77,7 @@ suspend fun runAgent(
             promptExecutor = executor,
             llmModel = Gemini3_5FlashLite,
             toolRegistry = toolRegistry,
-            systemPrompt = buildSystemPrompt(),
+            systemPrompt = buildSystemPrompt(appInstructions = appInstructions),
         ) {
             install(ChatMemory) { this.chatHistoryProvider = chatHistoryProvider }
             handleEvents {

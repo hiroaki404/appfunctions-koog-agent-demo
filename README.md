@@ -50,7 +50,8 @@ Key files:
 - `agent/app/src/main/java/.../AgentRunner.kt` — builds a `ToolRegistry` from the discovered
   functions and runs one turn of a Koog `AIAgent` against Gemini 3.5 Flash-Lite. A new agent is
   created for every message; Koog's `ChatMemory` feature, keyed by a session id held in
-  `AgentViewModel`, carries the conversation across messages.
+  `AgentViewModel`, carries the conversation across messages. The app description each provider
+  publishes in `app_metadata.xml` is read at runtime and added to the system prompt.
 
 ## Requirements
 

@@ -79,6 +79,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     chatHistoryProvider = chatHistoryProvider,
                     sessionId = currentSessionId,
                     appLabelOf = ::appLabelOf,
+                    appInstructionsOf = { metadata ->
+                        metadata.packageMetadata.resolveAppFunctionAppMetadata(getApplication())?.instructions
+                    },
                     onToolCallEvent = { event ->
                         _turns.update { turns -> turns.updateTurn(turnId) { it.applyToolEvent(event) } }
                     },
