@@ -19,7 +19,7 @@ object TravelRules {
 
     // Area and city names must match exactly (only surrounding whitespace is ignored). Other names
     // for the same place, such as "Hokkaido" or an airport name, are left to the calling LLM: the
-    // AppFunction descriptions list the accepted names and ask it to map to them.
+    // AppFunction metadata lists the accepted names and describes which names correspond to them.
 
     private val travelInfo: Map<Pair<String, Int>, List<Spot>> = mapOf(
         ("北海道" to 12) to listOf(

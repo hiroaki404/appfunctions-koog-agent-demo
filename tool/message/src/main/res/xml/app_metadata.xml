@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
-    appfn:instructions="Messaging app with a fixed set of contacts that records sent messages.
-Operational Patterns:
-  - sendMessage sends one text message to one contact per call.
+    appfn:instructions="Messaging app that sends text messages to a fixed set of contacts.
 Constraints:
-  - The available contacts are トム (Tom), 花子 (Hanako), and 健太 (Kenta). Pass one of these names exactly; map honorifics or nicknames (e.g. トムくん) to the closest listed name.
   - Messages are only recorded in the app and are not delivered to real people."
     appfn:displayDescription="@string/app_function_app_display_description"/>

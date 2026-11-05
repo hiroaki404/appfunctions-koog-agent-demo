@@ -20,10 +20,7 @@ data class ItineraryDay(
     val spots: List<Spot>,
 )
 
-/**
- * A trip plan made of one or more days. Whether a trip is in the past or upcoming is judged by
- * the dates of [days]; there is no separate status field.
- */
+/** A trip plan made of one or more days. The dates of its days show when the trip takes place. */
 @AppFunctionSerializable(isDescribedByKDoc = true)
 data class Itinerary(
     /** The trip title in Japanese, for example "2025年夏の北海道". */
@@ -40,9 +37,9 @@ data class FlightBooking(
     /** The flight number assigned by the app, for example "TR501". */
     val flightNumber: String,
     /** The departure city in Japanese, for example "東京". */
-    val from: String,
+    val fromCity: String,
     /** The arrival city in Japanese, for example "札幌". */
-    val to: String,
+    val toCity: String,
     /** The departure date in `yyyy-MM-dd` format. */
     val date: String,
 )

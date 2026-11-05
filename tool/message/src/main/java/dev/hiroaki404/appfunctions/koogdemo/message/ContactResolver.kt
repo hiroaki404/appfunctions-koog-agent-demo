@@ -19,7 +19,7 @@ val demoContacts = listOf(
  * of Latin letters. Returns null when no contact matches.
  *
  * Honorifics and nicknames (e.g. "トムくん") are deliberately not handled here: the sendMessage
- * description asks the calling LLM to map them to a listed name.
+ * description tells the calling LLM which listed name they correspond to.
  */
 fun resolveContact(input: String, contacts: List<Contact> = demoContacts): Contact? {
     val name = input.trim()

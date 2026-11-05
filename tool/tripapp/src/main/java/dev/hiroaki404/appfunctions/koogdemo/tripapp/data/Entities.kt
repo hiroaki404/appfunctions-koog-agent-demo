@@ -73,8 +73,8 @@ fun ItineraryEntity.toItinerary(): Itinerary {
 fun FlightBookingEntity.toFlightBooking(): FlightBooking = FlightBooking(
     bookingId = TravelRules.bookingId(sequence),
     flightNumber = flightNumber,
-    from = fromCity,
-    to = toCity,
+    fromCity = fromCity,
+    toCity = toCity,
     date = date,
 )
 

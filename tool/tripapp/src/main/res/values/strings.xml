@@ -1,6 +1,4 @@
 <resources>
     <string name="app_name">旅行</string>
-    <string name="app_function_app_description">Travel planning app that stores trip itineraries, including past trips, and books flights.
-    Use this when a user asks to recall a past trip, look up tourist spots, save a trip plan, or book a flight.</string>
-    <string name="app_function_app_display_description">travel planner</string>
+    <string name="app_function_app_display_description">旅程の検索と保存、観光スポットの取得、航空券の予約</string>
 </resources>

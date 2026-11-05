@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
-    appfn:instructions="Travel planning app that stores the user's trip itineraries (including trips taken in the past) and books flights.
+    appfn:instructions="Travel app for the user's trips: searching saved itineraries, getting recommended tourist spots, saving itineraries, and booking flights.
 Operational Patterns:
-  - To recall a past trip or the trip being planned, call searchItineraries; past versus upcoming is judged by the dates of each itinerary's days compared with today's date.
-  - To plan a new trip, call getTravelInfo for recommended spots, then call saveItinerary with the chosen spots grouped by day.
-  - To book a flight for a trip, call bookFlight with the departure and arrival cities and the date of travel.
+  - To tell past trips from upcoming ones, compare the day dates returned by searchItineraries with today's date. Calling searchItineraries without a keyword returns all itineraries in one call.
+  - To plan a new trip, call getTravelInfo to get recommended spots, then pass the chosen spots grouped by day to saveItinerary.
+  - Flight numbers and booking numbers come from the bookFlight result.
 Constraints:
-  - All dates use yyyy-MM-dd format, for example 2026-12-20.
-  - Cities for bookFlight are exactly 東京 or 札幌; map English names, airport names, or airport codes to these Japanese city names.
-  - getTravelInfo returns fixed data and supports only the area 北海道 in December (month 12); map other names for the area, such as Hokkaido, to 北海道. Unsupported combinations return an error listing the supported ones.
-  - Flight numbers and booking numbers are assigned by the app and must not be invented."
+  - All dates use yyyy-MM-dd format, for example 2026-12-20."
     appfn:displayDescription="@string/app_function_app_display_description"/>

@@ -4,7 +4,10 @@ import androidx.appfunctions.AppFunctionDeclaration
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionService
 import androidx.appfunctions.AppFunctionServiceEntryPoint
+import androidx.appfunctions.AppFunctionStringValueConstraint
 import dev.hiroaki404.appfunctions.koogdemo.tripapp.data.TripRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The AppFunctions exposed by the travel app.
@@ -26,18 +29,19 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
     }
 
     /**
-     * Get recommended tourist spots for an area in a given month, from fixed travel guide data.
+     * Gets recommended tourist spots for an area and month from fixed travel guide data.
      *
-     * @param area The travel area as its Japanese name, exactly "北海道" (the only supported area).
-     *   If the user names the area differently (for example "Hokkaido" or a city in it such as
-     *   "札幌"), pass "北海道" instead.
-     * @param month The month of travel as a number from 1 through 12, for example 12 for December.
+     * @param area The travel area. Only "北海道" is supported; "Hokkaido" and cities in it, such as
+     *   "札幌", correspond to this value.
+     * @param month The month of travel as a number from 1 through 12. Data exists only for 12
+     *   (December).
      * @return The recommended spots for that area and month.
-     * @throws AppFunctionInvalidArgumentException If the area and month combination is not
-     *   supported. The message lists the supported combinations; choose one of them and retry.
      */
     @AppFunctionDeclaration(isDescribedByKDoc = true)
-    suspend fun getTravelInfo(area: String, month: Int): List<Spot> = executeLogged(
+    suspend fun getTravelInfo(
+        @AppFunctionStringValueConstraint(enumValues = ["北海道"]) area: String,
+        month: Int,
+    ): List<Spot> = executeLogged(
         "getTravelInfo",
         "area=$area, month=$month",
     ) {
@@ -49,16 +53,12 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
     }
 
     /**
-     * Save a trip itinerary in the travel app so the user can see it on screen.
+     * Saves a new trip itinerary in the travel app and shows it on screen. Existing itineraries
+     * are not changed.
      *
-     * Whether a trip is in the past or upcoming is judged only by the dates of its days, so use
-     * the real dates of the trip.
-     *
-     * @param itinerary The itinerary to save. It needs a title and at least one day; every day
-     *   date must be in `yyyy-MM-dd` format, for example "2026-12-20".
+     * @param itinerary The itinerary to save, with a non-blank title and at least one day. The day
+     *   dates are the real dates of the trip, in `yyyy-MM-dd` format.
      * @return The ID of the saved itinerary.
-     * @throws AppFunctionInvalidArgumentException If the title is blank, there are no days, a date
-     *   is not a valid `yyyy-MM-dd` date, or a spot name is blank. Correct the value and retry.
      */
     @AppFunctionDeclaration(isDescribedByKDoc = true)
     suspend fun saveItinerary(itinerary: Itinerary): String = executeLogged(
@@ -70,16 +70,13 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
     }
 
     /**
-     * Search the user's saved itineraries, including trips they took in the past.
+     * Searches the user's saved itineraries, including past trips and trips being planned.
      *
-     * Use this to look up past trips (for example last year's trip to Hokkaido) or the trip that is
-     * currently being planned. Whether an itinerary is in the past or upcoming is judged by the
-     * dates of its days compared with today's date.
-     *
-     * @param keyword A short word to look for, matched as a partial, case-insensitive match against
-     *   itinerary titles and spot names, for example "北海道" or "小樽運河". Omit it, or pass an empty
-     *   string, to list all saved itineraries.
-     * @return The matching itineraries, which may be empty.
+     * @param keyword A short word matched as a partial, case-insensitive match against itinerary
+     *   titles and spot names, for example "北海道" or "小樽運河". If null or empty, returns all saved
+     *   itineraries.
+     * @return The matching itineraries, which may be empty. Each itinerary's day dates show when
+     *   the trip takes place; the result has no separate past or upcoming status.
      */
     @AppFunctionDeclaration(isDescribedByKDoc = true)
     suspend fun searchItineraries(keyword: String? = null): List<Itinerary> = executeLogged(
@@ -90,39 +87,38 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
     }
 
     /**
-     * Book a flight between two Japanese cities and save the booking in the travel app.
+     * Books a flight between 東京 and 札幌 and saves the booking in the travel app. The app assigns
+     * the flight number and booking number.
      *
-     * The flight number and booking number are decided by the app and returned; do not make them up.
-     *
-     * @param from The departure city, exactly "東京" or "札幌". If the user gives an English name,
-     *   an airport name, or an airport code (for example "Tokyo", "羽田空港", or "CTS"), pass the
-     *   Japanese city name instead.
-     * @param to The arrival city, exactly "東京" or "札幌", mapped the same way as [from].
+     * @param fromCity The departure city. English names, airport names, and airport codes, such as
+     *   "Tokyo", "羽田空港", and "CTS", correspond to these Japanese city names.
+     * @param toCity The arrival city, in the same form as `fromCity` and different from it.
      * @param date The departure date in `yyyy-MM-dd` format, for example "2026-12-20".
-     * @return The confirmed booking, including the booking number and flight number.
-     * @throws AppFunctionInvalidArgumentException If the date is not a valid `yyyy-MM-dd` date, a
-     *   city is not supported, or no flight is operated between the cities. The message lists the
-     *   supported cities or routes; correct the input and retry.
+     * @return The confirmed booking, including the assigned booking number and flight number.
      */
     @AppFunctionDeclaration(isDescribedByKDoc = true)
-    suspend fun bookFlight(from: String, to: String, date: String): FlightBooking = executeLogged(
+    suspend fun bookFlight(
+        @AppFunctionStringValueConstraint(enumValues = ["東京", "札幌"]) fromCity: String,
+        @AppFunctionStringValueConstraint(enumValues = ["東京", "札幌"]) toCity: String,
+        date: String,
+    ): FlightBooking = executeLogged(
         "bookFlight",
-        "from=$from, to=$to, date=$date",
+        "fromCity=$fromCity, toCity=$toCity, date=$date",
     ) {
         if (!TravelRules.isValidDate(date)) {
             throw AppFunctionInvalidArgumentException(
                 "date '$date' must be a valid date in yyyy-MM-dd format, for example 2026-12-20.",
             )
         }
-        val fromCity = from.trim().takeIf(TravelRules::isSupportedCity)
-            ?: throw unsupportedCity("from", from)
-        val toCity = to.trim().takeIf(TravelRules::isSupportedCity)
-            ?: throw unsupportedCity("to", to)
-        val flightNumber = TravelRules.flightNumberFor(fromCity, toCity)
+        val from = fromCity.trim().takeIf(TravelRules::isSupportedCity)
+            ?: throw unsupportedCity("fromCity", fromCity)
+        val to = toCity.trim().takeIf(TravelRules::isSupportedCity)
+            ?: throw unsupportedCity("toCity", toCity)
+        val flightNumber = TravelRules.flightNumberFor(from, to)
             ?: throw AppFunctionInvalidArgumentException(
-                "No flight from $fromCity to $toCity. Available routes: ${TravelRules.supportedRoutes}.",
+                "No flight from $from to $to. Available routes: ${TravelRules.supportedRoutes}.",
             )
-        repository.bookFlight(flightNumber, fromCity, toCity, date, addedByAi = true)
+        repository.bookFlight(flightNumber, from, to, date, addedByAi = true)
     }
 
     private fun unsupportedCity(parameter: String, value: String) = AppFunctionInvalidArgumentException(
@@ -130,13 +126,13 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
             "(not English or airport names): ${TravelRules.supportedCities}.",
     )
 
-    private inline fun <T : Any> executeLogged(
+    private suspend fun <T : Any> executeLogged(
         functionName: String,
         arguments: String,
-        block: () -> T,
-    ): T {
+        block: suspend () -> T,
+    ): T = withContext(Dispatchers.IO) {
         appFunctionLogger.started(functionName, arguments)
-        return try {
+        try {
             block().also { result -> appFunctionLogger.succeeded(functionName, arguments, result) }
         } catch (error: Exception) {
             appFunctionLogger.failed(functionName, arguments, error)

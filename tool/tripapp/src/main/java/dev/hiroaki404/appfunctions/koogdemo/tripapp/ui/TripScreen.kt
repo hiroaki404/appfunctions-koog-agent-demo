@@ -229,14 +229,14 @@ private fun TicketBody(saved: SavedFlightBooking, modifier: Modifier = Modifier)
     ) {
         if (saved.addedByAi) AiChip("AIが予約")
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(booking.from, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Ink)
+            Text(booking.fromCity, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Ink)
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowForward,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = Sea,
             )
-            Text(booking.to, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Ink)
+            Text(booking.toCity, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Ink)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             LabeledValue("日付", booking.date)

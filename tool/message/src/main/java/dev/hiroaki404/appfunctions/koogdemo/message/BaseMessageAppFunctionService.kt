@@ -1,9 +1,13 @@
 package dev.hiroaki404.appfunctions.koogdemo.message
 
 import androidx.appfunctions.AppFunctionDeclaration
+import androidx.appfunctions.AppFunctionElementNotFoundException
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionService
 import androidx.appfunctions.AppFunctionServiceEntryPoint
+import androidx.appfunctions.AppFunctionStringValueConstraint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Exposes the messaging app to AppFunctions callers.
@@ -26,37 +30,36 @@ abstract class BaseMessageAppFunctionService : AppFunctionService() {
     // TODO: The contact names below are hardcoded copies of demoContacts so the LLM knows the valid
     //  recipients. A real messaging app has per-user, changing contacts that can't be written into a
     //  build-time description: expose them through an AppFunction (e.g. listContacts/searchContacts),
-    //  tell the LLM here to pass a name returned by it, and let the LLM map honorifics or nicknames to
-    //  the closest one. Kept out of the KDoc on purpose, since the KDoc is sent to the LLM.
+    //  describe here that this takes a name returned by it, and let the LLM map honorifics or
+    //  nicknames to the closest one. Kept out of the KDoc on purpose, since the KDoc is sent to the LLM.
     /**
-     * Send a text message to one of the contacts saved in this app.
+     * Sends a text message to one of the contacts saved in this app. The message is only recorded
+     * in the app's history and shown on screen; nothing is delivered to a real person.
      *
-     * The message is only recorded in the app's history and shown on screen; nothing is
-     * delivered to a real person.
-     *
-     * @param contactName The recipient, exactly as one of the listed names: トム, 花子, 健太, or
-     *   their English names Tom, Hanako, Kenta. If the user refers to a contact with an honorific
-     *   or a nickname (for example "トムくん"), pass the closest listed name instead (here "トム").
-     * @param text The message body. It must not be blank.
-     * @return A short result such as "トムに送信しました".
-     * @throws AppFunctionInvalidArgumentException If the contact is not one of the available
-     *   contacts or the text is blank. Correct the contact name or text and retry.
+     * @param contactName The recipient. Honorifics and nicknames correspond to the closest of these
+     *   names; for example, "トムくん" corresponds to "トム".
+     * @param messageBody The message body, which can't be blank.
+     * @return A short confirmation such as "トムに送信しました".
      */
     @AppFunctionDeclaration(isDescribedByKDoc = true)
-    fun sendMessage(contactName: String, text: String): String = executeLogged(
+    suspend fun sendMessage(
+        @AppFunctionStringValueConstraint(enumValues = ["トム", "花子", "健太", "Tom", "Hanako", "Kenta"])
+        contactName: String,
+        messageBody: String,
+    ): String = executeLogged(
         "sendMessage",
-        "contactName=$contactName, text=$text",
+        "contactName=$contactName, messageBody=$messageBody",
     ) {
         val contact = resolveContact(contactName)
-            ?: throw AppFunctionInvalidArgumentException(
-                "Unknown contact: '$contactName'. Available contacts are ${availableContacts()}.",
+            ?: throw AppFunctionElementNotFoundException(
+                "No contact matches '$contactName'. Available contacts are ${availableContacts()}.",
             )
-        if (text.isBlank()) {
+        if (messageBody.isBlank()) {
             throw AppFunctionInvalidArgumentException(
-                "text must not be blank. Provide the message body to send to ${contact.name}.",
+                "messageBody must not be blank. Provide the message body to send to ${contact.name}.",
             )
         }
-        messageRepository.record(contact, text.trim())
+        messageRepository.record(contact, messageBody.trim())
         "${contact.name}に送信しました"
     }
 
@@ -64,13 +67,13 @@ abstract class BaseMessageAppFunctionService : AppFunctionService() {
         (listOf(contact.name) + contact.aliases).joinToString(separator = " / ")
     }
 
-    private inline fun <T : Any> executeLogged(
+    private suspend fun <T : Any> executeLogged(
         functionName: String,
         arguments: String,
-        block: () -> T,
-    ): T {
+        block: suspend () -> T,
+    ): T = withContext(Dispatchers.IO) {
         appFunctionLogger.started(functionName, arguments)
-        return try {
+        try {
             block().also { result -> appFunctionLogger.succeeded(functionName, arguments, result) }
         } catch (error: Exception) {
             appFunctionLogger.failed(functionName, arguments, error)
