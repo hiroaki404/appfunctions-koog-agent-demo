@@ -4,8 +4,8 @@
 
     <!-- Display names of each AppFunction for agent UIs, read by name ("app_function_display_name_"
          + function name) from another app. The model reads the KDoc, not these. -->
-    <string name="app_function_display_name_getTravelInfo" tools:ignore="UnusedResources">観光スポットを調べる</string>
-    <string name="app_function_display_name_saveItinerary" tools:ignore="UnusedResources">旅程を保存する</string>
-    <string name="app_function_display_name_searchItineraries" tools:ignore="UnusedResources">旅程を検索する</string>
-    <string name="app_function_display_name_bookFlight" tools:ignore="UnusedResources">航空券を予約する</string>
+    <string name="app_function_display_name_getTravelInfo" tools:ignore="UnusedResources">観光スポットの調査</string>
+    <string name="app_function_display_name_saveItinerary" tools:ignore="UnusedResources">旅程の保存</string>
+    <string name="app_function_display_name_searchItineraries" tools:ignore="UnusedResources">旅程の検索</string>
+    <string name="app_function_display_name_bookFlight" tools:ignore="UnusedResources">航空券の予約</string>
 </resources>
