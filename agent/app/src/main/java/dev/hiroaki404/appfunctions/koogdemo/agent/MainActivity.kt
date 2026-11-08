@@ -13,6 +13,8 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -54,6 +56,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -124,6 +130,7 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
     Column(modifier = modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
+                .clearFocusOnTapOutsideInput()
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -140,6 +147,7 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
         LazyColumn(
             state = listState,
             modifier = Modifier
+                .clearFocusOnTapOutsideInput()
                 .weight(1f)
                 .fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -159,6 +167,24 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
                 prompt = ""
             },
         )
+    }
+}
+
+/**
+ * Clears focus and hides the keyboard when a pointer goes down on this element.
+ * Watches the Initial pass without consuming, so child clicks and scrolling keep working.
+ * Apply it to everything except the input bar so that tapping the input field keeps the keyboard open.
+ */
+@Composable
+private fun Modifier.clearFocusOnTapOutsideInput(): Modifier {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    return pointerInput(focusManager, keyboardController) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        }
     }
 }
 
