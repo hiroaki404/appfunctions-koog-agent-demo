@@ -89,16 +89,24 @@ fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier, initially
                 overflow = TextOverflow.Ellipsis,
             )
             call.appLabel?.let { label ->
-                Text(
-                    label,
+                Row(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(Surface2)
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
-                    color = Ink2,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                )
+                        .padding(start = 3.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Without an icon (e.g. in previews), keep the label's original left padding.
+                    AppIcon(call.packageName, size = 14.dp)
+                    Text(
+                        label,
+                        modifier = Modifier.padding(start = if (call.packageName == null) 5.dp else 0.dp),
+                        color = Ink2,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                    )
+                }
             }
             Icon(
                 if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,

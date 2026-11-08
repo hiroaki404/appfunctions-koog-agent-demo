@@ -9,11 +9,15 @@ sealed interface ToolCallUiEvent {
     /** The user-visible name of the app providing the function, if known. */
     val appLabel: String?
 
+    /** The provider app's package, so the UI can show its icon; kept as a plain string here. */
+    val packageName: String?
+
     data class Started(
         override val toolCallId: String?,
         override val functionName: String,
         override val arguments: String,
         override val appLabel: String? = null,
+        override val packageName: String? = null,
     ) : ToolCallUiEvent
 
     data class Completed(
@@ -22,6 +26,7 @@ sealed interface ToolCallUiEvent {
         override val arguments: String,
         val result: String,
         override val appLabel: String? = null,
+        override val packageName: String? = null,
     ) : ToolCallUiEvent
 
     data class Failed(
@@ -30,6 +35,7 @@ sealed interface ToolCallUiEvent {
         override val arguments: String,
         val error: String,
         override val appLabel: String? = null,
+        override val packageName: String? = null,
     ) : ToolCallUiEvent
 }
 
@@ -47,6 +53,7 @@ data class ToolCallUiModel(
     val result: String? = null,
     val error: String? = null,
     val appLabel: String? = null,
+    val packageName: String? = null,
 )
 
 /** Immutable, chronological state for tool-call cards. */
@@ -59,6 +66,7 @@ data class ToolCallUiState(val calls: List<ToolCallUiModel> = emptyList()) {
                 arguments = event.arguments,
                 status = ToolCallStatus.Running,
                 appLabel = event.appLabel,
+                packageName = event.packageName,
             ),
         )
 
@@ -102,6 +110,7 @@ data class ToolCallUiState(val calls: List<ToolCallUiModel> = emptyList()) {
                     result = result,
                     error = error,
                     appLabel = event.appLabel,
+                    packageName = event.packageName,
                 ),
             )
         }

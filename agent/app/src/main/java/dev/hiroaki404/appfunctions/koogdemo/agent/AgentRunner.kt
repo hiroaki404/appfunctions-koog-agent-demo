@@ -22,7 +22,7 @@ import kotlinx.serialization.json.JsonObject
 private val Gemini3_5FlashLite = GoogleModels.Gemini3_5Flash.copy(id = "gemini-3.5-flash-lite")
 
 /** Where a Koog tool came from, for display: the AppFunction's own name and its provider app's label. */
-private data class ToolSource(val functionName: String, val appLabel: String?)
+private data class ToolSource(val functionName: String, val appLabel: String?, val packageName: String)
 
 /**
  * Runs one turn of a Koog agent with tools discovered at runtime. A new [AIAgent] is created for every
@@ -54,13 +54,14 @@ suspend fun runAgent(
         }.getOrNull()
     }
     val toolSources = discovered.associate { (metadata, tool) ->
-        tool.descriptor.name to ToolSource(metadata.id.substringAfter('#'), appLabelOf(metadata.packageName))
+        tool.descriptor.name to ToolSource(metadata.id.substringAfter('#'), appLabelOf(metadata.packageName), metadata.packageName)
     }
     val toolRegistry = ToolRegistry {
         discovered.forEach { (_, appFunctionTool) -> tool(appFunctionTool) }
     }
     fun functionNameOf(toolName: String) = toolSources[toolName]?.functionName ?: toolName
     fun appLabelOfTool(toolName: String) = toolSources[toolName]?.appLabel
+    fun packageNameOfTool(toolName: String) = toolSources[toolName]?.packageName
     val appInstructions = withContext(Dispatchers.IO) {
         discovered.map { (metadata, _) -> metadata }.distinctBy { it.packageName }.mapNotNull { metadata ->
             appInstructionsOf(metadata)?.takeIf { it.isNotBlank() }?.let { instructions ->
@@ -88,6 +89,7 @@ suspend fun runAgent(
                             functionName = functionNameOf(event.toolName),
                             arguments = event.toolArgs.prettyPrinted(),
                             appLabel = appLabelOfTool(event.toolName),
+                            packageName = packageNameOfTool(event.toolName),
                         ),
                     )
                 }
@@ -99,6 +101,7 @@ suspend fun runAgent(
                             arguments = event.toolArgs.prettyPrinted(),
                             result = event.toolResult?.toString() ?: "null",
                             appLabel = appLabelOfTool(event.toolName),
+                            packageName = packageNameOfTool(event.toolName),
                         ),
                     )
                 }
@@ -110,6 +113,7 @@ suspend fun runAgent(
                             arguments = event.toolArgs.prettyPrinted(),
                             error = event.error?.message ?: event.message,
                             appLabel = appLabelOfTool(event.toolName),
+                            packageName = packageNameOfTool(event.toolName),
                         ),
                     )
                 }

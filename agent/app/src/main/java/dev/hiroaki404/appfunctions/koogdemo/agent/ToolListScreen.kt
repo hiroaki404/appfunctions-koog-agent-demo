@@ -156,6 +156,7 @@ private fun ToolGroup(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            AppIcon(group.packageName, size = 24.dp)
             Text(
                 group.app.label,
                 modifier = Modifier.weight(1f, fill = false),
