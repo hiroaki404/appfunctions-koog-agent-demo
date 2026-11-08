@@ -126,6 +126,13 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         sessionId = UUID.randomUUID().toString()
         _turns.value = emptyList()
     }
+
+    /** Debug aid: shows [SampleTurns] in place of the conversation, without calling the LLM. */
+    fun loadSampleTurns() {
+        if (_isRunning.value) return
+        sessionId = UUID.randomUUID().toString()
+        _turns.value = SampleTurns
+    }
 }
 
 /** Matches what [runAgent] can register: a function whose types it can't convert is skipped there too. */

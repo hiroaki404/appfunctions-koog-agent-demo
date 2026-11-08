@@ -15,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -37,6 +38,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -121,6 +123,24 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
     val isRunning by viewModel.isRunning.collectAsStateWithLifecycle()
     val availableTools by viewModel.availableTools.collectAsStateWithLifecycle()
     var prompt by remember { mutableStateOf("") }
+    var showSampleDialog by remember { mutableStateOf(false) }
+
+    if (showSampleDialog) {
+        AlertDialog(
+            onDismissRequest = { showSampleDialog = false },
+            title = { Text("見本の会話を読み込みますか？") },
+            text = { Text("UI 確認用のデバッグ機能です。今の会話は消えます。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSampleDialog = false
+                    viewModel.loadSampleTurns()
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSampleDialog = false }) { Text("キャンセル") }
+            },
+        )
+    }
     val listState = rememberLazyListState()
 
     LaunchedEffect(turns.size) {
@@ -136,7 +156,18 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("旅行プランナー", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "旅行プランナー",
+                // Debug builds only: a long press offers to load a sample conversation for checking the UI.
+                modifier = if (BuildConfig.DEBUG) {
+                    Modifier.pointerInput(Unit) { detectTapGestures(onLongPress = { showSampleDialog = true }) }
+                } else {
+                    Modifier
+                },
+                color = Ink,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+            )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 ToolCountPill(state = availableTools, onClick = onOpenTools)
                 TextButton(onClick = viewModel::newConversation) {
