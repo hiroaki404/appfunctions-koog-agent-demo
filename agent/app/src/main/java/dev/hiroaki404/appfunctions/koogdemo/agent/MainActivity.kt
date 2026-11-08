@@ -12,7 +12,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,8 +35,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowUpward
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,22 +54,16 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.AgentTheme
-import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Bg
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink2
-import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Line
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Sea
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.SeaC
-import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Surface
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Surface2
 
 private const val TAG = "AppFunctionDiscovery"
@@ -243,12 +234,7 @@ private fun ChatTurnItem(turn: ChatTurn, modifier: Modifier = Modifier) {
             ThinkingIndicator()
         }
         turn.response?.let { response ->
-            Text(
-                plainAnswerText(response),
-                color = Ink,
-                fontSize = 15.sp,
-                lineHeight = 24.75.sp,
-            )
+            AnswerText(response)
         }
         turn.error?.let { error ->
             Text(
@@ -310,100 +296,5 @@ private fun PromptBubble(prompt: String, modifier: Modifier = Modifier) {
             fontSize = 15.sp,
             lineHeight = 23.25.sp,
         )
-    }
-}
-
-@Composable
-private fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Bg)
-            .border(1.dp, Line, RoundedCornerShape(14.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ToolStatusIcon(call.status)
-            Text(
-                call.functionName,
-                modifier = Modifier.weight(1f, fill = false),
-                color = Ink,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            call.appLabel?.let { label ->
-                Text(
-                    label,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(Surface2)
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
-                    color = Ink2,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                )
-            }
-        }
-        Text(
-            call.arguments,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(Surface)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            color = Ink,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 13.sp,
-            lineHeight = 19.5.sp,
-        )
-        call.result?.let { result ->
-            Text(
-                "→ $result",
-                color = Ink2,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        call.error?.let { error ->
-            Text(error, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
-        }
-    }
-}
-
-@Composable
-private fun ToolStatusIcon(status: ToolCallStatus, modifier: Modifier = Modifier) {
-    when (status) {
-        ToolCallStatus.Running -> CircularProgressIndicator(
-            modifier = modifier.size(18.dp),
-            color = Sea,
-            strokeWidth = 2.dp,
-        )
-
-        ToolCallStatus.Succeeded -> StatusCircle(Sea, Icons.Rounded.Check, modifier)
-        ToolCallStatus.Failed -> StatusCircle(MaterialTheme.colorScheme.error, Icons.Rounded.Close, modifier)
-    }
-}
-
-@Composable
-private fun StatusCircle(
-    color: Color,
-    icon: ImageVector,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .size(18.dp)
-            .clip(CircleShape)
-            .background(color),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(12.dp), tint = Color.White)
     }
 }
