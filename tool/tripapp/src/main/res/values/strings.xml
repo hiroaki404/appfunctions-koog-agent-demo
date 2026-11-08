@@ -1,4 +1,11 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">旅行</string>
     <string name="app_function_app_display_description">旅程の検索と保存、観光スポットの取得、航空券の予約</string>
+
+    <!-- Display names of each AppFunction for agent UIs, read by name ("app_function_display_name_"
+         + function name) from another app. The model reads the KDoc, not these. -->
+    <string name="app_function_display_name_getTravelInfo" tools:ignore="UnusedResources">観光スポットを調べる</string>
+    <string name="app_function_display_name_saveItinerary" tools:ignore="UnusedResources">旅程を保存する</string>
+    <string name="app_function_display_name_searchItineraries" tools:ignore="UnusedResources">旅程を検索する</string>
+    <string name="app_function_display_name_bookFlight" tools:ignore="UnusedResources">航空券を予約する</string>
 </resources>

@@ -1,4 +1,8 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">メッセージ</string>
     <string name="app_function_app_display_description">登録済みの連絡先へのメッセージ送信</string>
+
+    <!-- Display names of each AppFunction for agent UIs, read by name ("app_function_display_name_"
+         + function name) from another app. The model reads the KDoc, not these. -->
+    <string name="app_function_display_name_sendMessage" tools:ignore="UnusedResources">メッセージを送る</string>
 </resources>

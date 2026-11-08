@@ -79,10 +79,10 @@ fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier, initially
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ToolStatusIcon(call.status)
             Text(
-                call.functionName,
+                call.displayName ?: call.functionName,
                 modifier = Modifier.weight(1f),
                 color = Ink,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = if (call.displayName == null) FontFamily.Monospace else null,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,

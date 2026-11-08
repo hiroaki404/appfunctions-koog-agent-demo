@@ -6,6 +6,9 @@ sealed interface ToolCallUiEvent {
     val functionName: String
     val arguments: String
 
+    /** The user-visible name the provider app gives the function, if it defines one. */
+    val displayName: String?
+
     /** The user-visible name of the app providing the function, if known. */
     val appLabel: String?
 
@@ -16,6 +19,7 @@ sealed interface ToolCallUiEvent {
         override val toolCallId: String?,
         override val functionName: String,
         override val arguments: String,
+        override val displayName: String? = null,
         override val appLabel: String? = null,
         override val packageName: String? = null,
     ) : ToolCallUiEvent
@@ -25,6 +29,7 @@ sealed interface ToolCallUiEvent {
         override val functionName: String,
         override val arguments: String,
         val result: String,
+        override val displayName: String? = null,
         override val appLabel: String? = null,
         override val packageName: String? = null,
     ) : ToolCallUiEvent
@@ -34,6 +39,7 @@ sealed interface ToolCallUiEvent {
         override val functionName: String,
         override val arguments: String,
         val error: String,
+        override val displayName: String? = null,
         override val appLabel: String? = null,
         override val packageName: String? = null,
     ) : ToolCallUiEvent
@@ -54,6 +60,7 @@ data class ToolCallUiModel(
     val error: String? = null,
     val appLabel: String? = null,
     val packageName: String? = null,
+    val displayName: String? = null,
 )
 
 /** Immutable, chronological state for tool-call cards. */
@@ -67,6 +74,7 @@ data class ToolCallUiState(val calls: List<ToolCallUiModel> = emptyList()) {
                 status = ToolCallStatus.Running,
                 appLabel = event.appLabel,
                 packageName = event.packageName,
+                displayName = event.displayName,
             ),
         )
 
@@ -111,6 +119,7 @@ data class ToolCallUiState(val calls: List<ToolCallUiModel> = emptyList()) {
                     error = error,
                     appLabel = event.appLabel,
                     packageName = event.packageName,
+                    displayName = event.displayName,
                 ),
             )
         }

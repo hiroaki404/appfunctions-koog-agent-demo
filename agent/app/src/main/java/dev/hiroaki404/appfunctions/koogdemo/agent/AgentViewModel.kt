@@ -79,6 +79,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     chatHistoryProvider = chatHistoryProvider,
                     sessionId = currentSessionId,
                     appLabelOf = ::appLabelOf,
+                    functionDisplayNameOf = { metadata -> getApplication<Application>().resolveFunctionDisplayName(metadata) },
                     appInstructionsOf = { metadata ->
                         metadata.packageMetadata.resolveAppFunctionAppMetadata(getApplication())?.instructions
                     },

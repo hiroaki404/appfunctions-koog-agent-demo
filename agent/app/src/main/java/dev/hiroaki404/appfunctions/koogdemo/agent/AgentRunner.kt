@@ -21,8 +21,16 @@ import kotlinx.serialization.json.JsonObject
 /** Koog 1.2.0 has no definition for Gemini 3.5 Flash-Lite, so reuse 3.5 Flash's capabilities with its id. */
 private val Gemini3_5FlashLite = GoogleModels.Gemini3_5Flash.copy(id = "gemini-3.5-flash-lite")
 
-/** Where a Koog tool came from, for display: the AppFunction's own name and its provider app's label. */
-private data class ToolSource(val functionName: String, val appLabel: String?, val packageName: String)
+/**
+ * Where a Koog tool came from, for display: the AppFunction's own name, the display name its provider
+ * app gives it (if any), and the provider app's label and package.
+ */
+private data class ToolSource(
+    val functionName: String,
+    val displayName: String?,
+    val appLabel: String?,
+    val packageName: String,
+)
 
 /**
  * Runs one turn of a Koog agent with tools discovered at runtime. A new [AIAgent] is created for every
@@ -31,6 +39,8 @@ private data class ToolSource(val functionName: String, val appLabel: String?, v
  * [appFunctions] is the latest list from [discoverAppFunctions], so a function installed since the
  * previous call is already a tool here.
  * [appLabelOf] turns a provider app's package name into its user-visible name for tool-call events.
+ * [functionDisplayNameOf] reads the user-visible name the provider app gives a function; it runs off
+ * the main thread, and the card falls back to the function name when it returns null.
  * [appInstructionsOf] reads the app description of a function's provider app; it runs off the main
  * thread, once per app, and the results are added to the system prompt.
  */
@@ -42,6 +52,7 @@ suspend fun runAgent(
     chatHistoryProvider: ChatHistoryProvider,
     sessionId: String,
     appLabelOf: (packageName: String) -> String? = { null },
+    functionDisplayNameOf: (AppFunctionMetadata) -> String? = { null },
     appInstructionsOf: (AppFunctionMetadata) -> String? = { null },
     onToolCallEvent: suspend (ToolCallUiEvent) -> Unit = {},
 ): String {
@@ -53,13 +64,21 @@ suspend fun runAgent(
             Log.w("KoogAgent", "Skipping unsupported AppFunction ${metadata.id}", error)
         }.getOrNull()
     }
-    val toolSources = discovered.associate { (metadata, tool) ->
-        tool.descriptor.name to ToolSource(metadata.id.substringAfter('#'), appLabelOf(metadata.packageName), metadata.packageName)
+    val toolSources = withContext(Dispatchers.IO) {
+        discovered.associate { (metadata, tool) ->
+            tool.descriptor.name to ToolSource(
+                functionName = metadata.functionName,
+                displayName = functionDisplayNameOf(metadata),
+                appLabel = appLabelOf(metadata.packageName),
+                packageName = metadata.packageName,
+            )
+        }
     }
     val toolRegistry = ToolRegistry {
         discovered.forEach { (_, appFunctionTool) -> tool(appFunctionTool) }
     }
     fun functionNameOf(toolName: String) = toolSources[toolName]?.functionName ?: toolName
+    fun displayNameOf(toolName: String) = toolSources[toolName]?.displayName
     fun appLabelOfTool(toolName: String) = toolSources[toolName]?.appLabel
     fun packageNameOfTool(toolName: String) = toolSources[toolName]?.packageName
     val appInstructions = withContext(Dispatchers.IO) {
@@ -88,6 +107,7 @@ suspend fun runAgent(
                             toolCallId = event.toolCallId,
                             functionName = functionNameOf(event.toolName),
                             arguments = event.toolArgs.prettyPrinted(),
+                            displayName = displayNameOf(event.toolName),
                             appLabel = appLabelOfTool(event.toolName),
                             packageName = packageNameOfTool(event.toolName),
                         ),
@@ -100,6 +120,7 @@ suspend fun runAgent(
                             functionName = functionNameOf(event.toolName),
                             arguments = event.toolArgs.prettyPrinted(),
                             result = event.toolResult?.toString() ?: "null",
+                            displayName = displayNameOf(event.toolName),
                             appLabel = appLabelOfTool(event.toolName),
                             packageName = packageNameOfTool(event.toolName),
                         ),
@@ -112,6 +133,7 @@ suspend fun runAgent(
                             functionName = functionNameOf(event.toolName),
                             arguments = event.toolArgs.prettyPrinted(),
                             error = event.error?.message ?: event.message,
+                            displayName = displayNameOf(event.toolName),
                             appLabel = appLabelOfTool(event.toolName),
                             packageName = packageNameOfTool(event.toolName),
                         ),
