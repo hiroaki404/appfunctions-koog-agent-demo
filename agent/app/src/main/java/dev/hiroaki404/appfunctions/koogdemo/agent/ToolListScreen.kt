@@ -157,35 +157,40 @@ private fun ToolGroup(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AppIcon(group.packageName, size = 24.dp)
+            // The name and its NEW badge take the free width, so the count lines up at the right edge.
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    group.app.label,
+                    modifier = Modifier.weight(1f, fill = false),
+                    color = Ink,
+                    fontSize = 14.sp,
+                    fontWeight = if (expanded) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (group.hasNew) {
+                    Text(
+                        "NEW",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(Sea)
+                            .padding(horizontal = 6.dp, vertical = 1.dp),
+                        color = Color.White,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
             Text(
-                group.app.label,
-                modifier = Modifier.weight(1f, fill = false),
-                color = Ink,
-                fontSize = 14.sp,
-                fontWeight = if (expanded) FontWeight.Bold else FontWeight.Normal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                group.functions.size.toString(),
+                color = Ink2,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 13.sp,
             )
-            if (group.hasNew) {
-                Text(
-                    "NEW",
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(Sea)
-                        .padding(horizontal = 6.dp, vertical = 1.dp),
-                    color = Color.White,
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
-                Text(
-                    group.functions.size.toString(),
-                    color = Ink2,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 13.sp,
-                )
-            }
             Icon(
                 if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                 contentDescription = if (expanded) "閉じる" else "開く",
