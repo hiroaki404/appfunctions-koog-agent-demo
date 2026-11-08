@@ -16,8 +16,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.AgentTheme
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink2
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Sea
@@ -82,5 +84,27 @@ private fun inlineText(text: String): AnnotatedString = buildAnnotatedString {
             else -> null
         }
         if (style == null) append(span.text) else withStyle(style) { append(span.text) }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFBFAF7, widthDp = 360)
+@Composable
+private fun AnswerTextPreview() {
+    AgentTheme {
+        AnswerText(
+            """
+            保存されている旅行の予定と、12月の北海道のおすすめスポットです。
+
+            ## 保存されている旅行の予定
+            1. **2025年夏の北海道**（2025-08-10 〜 2025-08-11）
+                * 時計台、大通公園
+            2. **2026年冬の北海道旅行**
+
+            ### 12月の北海道のおすすめスポット
+            * **小樽運河**: ガス灯と石造り倉庫が並ぶ運河。
+            * **旭山動物園**: *冬は*ペンギンの散歩が見どころ。予約番号は `TRP-0001` です。
+            """.trimIndent(),
+            modifier = Modifier.padding(16.dp),
+        )
     }
 }

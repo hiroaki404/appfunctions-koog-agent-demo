@@ -37,8 +37,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.AgentTheme
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Bg
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink2
@@ -59,8 +61,8 @@ private val CardShape = RoundedCornerShape(14.dp)
  * expands both in full.
  */
 @Composable
-fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
+fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier, initiallyExpanded: Boolean = false) {
+    var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val arguments = remember(call.arguments) { parseToolJson(call.arguments) }
     val result = remember(call.result) { call.result?.let(::parseToolJson) }
     Column(
@@ -250,5 +252,45 @@ private fun StatusCircle(color: Color, icon: ImageVector, modifier: Modifier = M
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, modifier = Modifier.size(12.dp), tint = Color.White)
+    }
+}
+
+private val PreviewItineraries = """"[{"title":"2025年夏の北海道","days":[{"date":"2025-08-10","spots":[{"name":"時計台"},{"name":"大通公園"}]}]},{"title":"2026年冬の北海道旅行","days":[]}]""""
+
+private val PreviewSpots = """[{"name":"さっぽろホワイトイルミネーション","description":"札幌の大通公園などを光で彩る冬の風物詩。12月の札幌観光の定番。"},{"name":"小樽運河","description":"ガス灯と石造り倉庫が並ぶ運河。冬は雪景色の中の夜景が美しい。"},{"name":"旭山動物園","description":"旭川にある人気の動物園。"},{"name":"定山渓温泉","description":"札幌近郊の温泉地。"}]"""
+
+@Preview(showBackground = true, backgroundColor = 0xFFFBFAF7, widthDp = 360)
+@Composable
+private fun ToolCallCardPreview() {
+    AgentTheme {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            ToolCallCard(
+                ToolCallUiModel(null, "searchItineraries", "{}", ToolCallStatus.Succeeded, result = PreviewItineraries, appLabel = "旅行"),
+            )
+            ToolCallCard(
+                ToolCallUiModel(
+                    null,
+                    "saveItinerary",
+                    """{"itinerary":{"title":"12月の北海道","days":[{"date":"2026-12-12","spots":[{"name":"小樽運河"}]}]}}""",
+                    ToolCallStatus.Running,
+                    appLabel = "旅行",
+                ),
+            )
+            ToolCallCard(
+                ToolCallUiModel(null, "sendMessage", """{"recipient":"トム","body":"旅程を送ります"}""", ToolCallStatus.Succeeded, result = "\"Error: unknown recipient\"", appLabel = "メッセージ"),
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFBFAF7, widthDp = 360)
+@Composable
+private fun ToolCallCardExpandedPreview() {
+    AgentTheme {
+        ToolCallCard(
+            ToolCallUiModel(null, "getTravelInfo", """{"area":"北海道","month":12}""", ToolCallStatus.Succeeded, result = PreviewSpots, appLabel = "旅行"),
+            modifier = Modifier.padding(16.dp),
+            initiallyExpanded = true,
+        )
     }
 }
