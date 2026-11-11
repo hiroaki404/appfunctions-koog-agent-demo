@@ -8,6 +8,7 @@ import androidx.appfunctions.AppFunctionStringValueConstraint
 import dev.hiroaki404.appfunctions.koogdemo.tripapp.data.TripRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 /**
  * The AppFunctions exposed by the travel app.
@@ -93,23 +94,18 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
      * @param fromCity The departure city. English names, airport names, and airport codes, such as
      *   "Tokyo", "羽田空港", and "CTS", correspond to these Japanese city names.
      * @param toCity The arrival city, in the same form as `fromCity` and different from it.
-     * @param date The departure date in `yyyy-MM-dd` format, for example "2026-12-20".
+     * @param date The departure date.
      * @return The confirmed booking, including the assigned booking number and flight number.
      */
     @AppFunctionDeclaration(isDescribedByKDoc = true)
     suspend fun bookFlight(
         @AppFunctionStringValueConstraint(enumValues = ["東京", "札幌"]) fromCity: String,
         @AppFunctionStringValueConstraint(enumValues = ["東京", "札幌"]) toCity: String,
-        date: String,
+        date: LocalDate,
     ): FlightBooking = executeLogged(
         "bookFlight",
         "fromCity=$fromCity, toCity=$toCity, date=$date",
     ) {
-        if (!TravelRules.isValidDate(date)) {
-            throw AppFunctionInvalidArgumentException(
-                "date '$date' must be a valid date in yyyy-MM-dd format, for example 2026-12-20.",
-            )
-        }
         val from = fromCity.trim().takeIf(TravelRules::isSupportedCity)
             ?: throw unsupportedCity("fromCity", fromCity)
         val to = toCity.trim().takeIf(TravelRules::isSupportedCity)
@@ -118,7 +114,8 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
             ?: throw AppFunctionInvalidArgumentException(
                 "No flight from $from to $to. Available routes: ${TravelRules.supportedRoutes}.",
             )
-        repository.bookFlight(flightNumber, from, to, date, addedByAi = true)
+        // Bookings are stored and returned with the yyyy-MM-dd text the rest of the app uses.
+        repository.bookFlight(flightNumber, from, to, date.toString(), addedByAi = true)
     }
 
     private fun unsupportedCity(parameter: String, value: String) = AppFunctionInvalidArgumentException(

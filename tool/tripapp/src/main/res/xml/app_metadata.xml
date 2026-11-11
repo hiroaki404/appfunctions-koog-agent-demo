@@ -6,5 +6,5 @@ Operational Patterns:
   - To plan a new trip, call getTravelInfo to get recommended spots, then pass the chosen spots grouped by day to saveItinerary.
   - Flight numbers and booking numbers come from the bookFlight result.
 Constraints:
-  - All dates use yyyy-MM-dd format, for example 2026-12-20."
+  - Dates written as text, such as itinerary day dates, use yyyy-MM-dd format, for example 2026-12-20."
     appfn:displayDescription="@string/app_function_app_display_description"/>
