@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import java.time.LocalDate
 
 private val DEC_20: LocalDate = LocalDate.of(2026, 12, 20)
+private val APPROVED = UserApproval(approved = true)
 
 @RunWith(AndroidJUnit4::class)
 class BaseTripAppFunctionServiceInstrumentedTest {
@@ -77,8 +78,8 @@ class BaseTripAppFunctionServiceInstrumentedTest {
 
     @Test
     fun bookFlightAssignsSequentialBookingIdsAndStoresThem() = runBlocking {
-        val first = service.bookFlight("東京", "札幌", DEC_20)
-        val second = service.bookFlight("札幌", "東京", LocalDate.of(2026, 12, 22))
+        val first = service.bookFlight("東京", "札幌", DEC_20, APPROVED)
+        val second = service.bookFlight("札幌", "東京", LocalDate.of(2026, 12, 22), APPROVED)
 
         assertEquals(FlightBooking("TRP-0001", "TR501", "東京", "札幌", "2026-12-20"), first)
         assertEquals("TRP-0002", second.bookingId)
@@ -88,7 +89,7 @@ class BaseTripAppFunctionServiceInstrumentedTest {
     @Test
     fun appFunctionWritesAreMarkedAsAddedByAi() = runBlocking {
         service.saveItinerary(TripSeed.upcomingTrip)
-        service.bookFlight("東京", "札幌", DEC_20)
+        service.bookFlight("東京", "札幌", DEC_20, APPROVED)
         repository.saveItinerary(TripSeed.pastTrip)
         repository.seedUpcomingTrip()
 
@@ -99,9 +100,16 @@ class BaseTripAppFunctionServiceInstrumentedTest {
     @Test
     fun bookFlightRejectsInvalidInput() {
         // The date is a LocalDate now, so a malformed date can no longer reach the function.
-        assertInvalidArgument { service.bookFlight("羽田空港", "札幌", DEC_20) }
-        assertInvalidArgument { service.bookFlight("Tokyo", "札幌", DEC_20) }
-        assertInvalidArgument { service.bookFlight("東京", "東京", DEC_20) }
+        assertInvalidArgument { service.bookFlight("羽田空港", "札幌", DEC_20, APPROVED) }
+        assertInvalidArgument { service.bookFlight("Tokyo", "札幌", DEC_20, APPROVED) }
+        assertInvalidArgument { service.bookFlight("東京", "東京", DEC_20, APPROVED) }
+    }
+
+    @Test
+    fun bookFlightRejectsMissingApproval() = runBlocking {
+        assertInvalidArgument { service.bookFlight("東京", "札幌", DEC_20, UserApproval(approved = false)) }
+
+        assertEquals(emptyList<FlightBooking>(), repository.flightBookings.first())
     }
 
     @Test
@@ -112,7 +120,7 @@ class BaseTripAppFunctionServiceInstrumentedTest {
     @Test
     fun resetRestoresOnlyPastTrips() = runBlocking {
         service.saveItinerary(TripSeed.upcomingTrip)
-        service.bookFlight("東京", "札幌", DEC_20)
+        service.bookFlight("東京", "札幌", DEC_20, APPROVED)
 
         repository.resetToInitialState()
 

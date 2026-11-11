@@ -43,3 +43,13 @@ data class FlightBooking(
     /** The departure date in `yyyy-MM-dd` format. */
     val date: String,
 )
+
+/**
+ * The user's answer to a confirmation request for an action that needs their approval. The calling
+ * agent fills this in after asking the user; the LLM never sets it.
+ */
+@AppFunctionSerializable(isDescribedByKDoc = true)
+data class UserApproval(
+    /** Whether the user approved this action. */
+    val approved: Boolean,
+)

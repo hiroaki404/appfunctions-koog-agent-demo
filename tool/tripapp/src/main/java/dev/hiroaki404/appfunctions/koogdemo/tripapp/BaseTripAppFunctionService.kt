@@ -95,6 +95,9 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
      *   "Tokyo", "羽田空港", and "CTS", correspond to these Japanese city names.
      * @param toCity The arrival city, in the same form as `fromCity` and different from it.
      * @param date The departure date.
+     * @param userApproval The user's approval of this booking. The agent fills this in after asking
+     *   the user to confirm; the LLM does not specify it. The booking is rejected unless the user
+     *   approved.
      * @return The confirmed booking, including the assigned booking number and flight number.
      */
     @AppFunctionDeclaration(isDescribedByKDoc = true)
@@ -102,10 +105,14 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
         @AppFunctionStringValueConstraint(enumValues = ["東京", "札幌"]) fromCity: String,
         @AppFunctionStringValueConstraint(enumValues = ["東京", "札幌"]) toCity: String,
         date: LocalDate,
+        userApproval: UserApproval,
     ): FlightBooking = executeLogged(
         "bookFlight",
-        "fromCity=$fromCity, toCity=$toCity, date=$date",
+        "fromCity=$fromCity, toCity=$toCity, date=$date, userApproval=$userApproval",
     ) {
+        if (!userApproval.approved) {
+            throw AppFunctionInvalidArgumentException("The user has not approved this booking.")
+        }
         val from = fromCity.trim().takeIf(TravelRules::isSupportedCity)
             ?: throw unsupportedCity("fromCity", fromCity)
         val to = toCity.trim().takeIf(TravelRules::isSupportedCity)
