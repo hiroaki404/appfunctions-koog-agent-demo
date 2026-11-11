@@ -142,6 +142,8 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
         )
     }
     val listState = rememberLazyListState()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(turns.size) {
         if (turns.isNotEmpty()) listState.animateScrollToItem(turns.lastIndex)
@@ -196,6 +198,9 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
             onSend = {
                 viewModel.send(prompt)
                 prompt = ""
+                // Hide the keyboard so the tool call cards stay visible while the agent runs.
+                focusManager.clearFocus()
+                keyboardController?.hide()
             },
         )
     }
