@@ -27,6 +27,22 @@ class ChatTurnTest {
     }
 
     @Test
+    fun activeToolCallIsTheLatestCallOfTheTurnBeingAnswered() {
+        val running = ChatTurn(id = 2, prompt = "book")
+            .applyToolEvent(ToolCallUiEvent.Started("c1", "searchTrips", "{}"))
+            .applyToolEvent(ToolCallUiEvent.Completed("c1", "searchTrips", "{}", "[]"))
+            .applyToolEvent(ToolCallUiEvent.Started("c2", "bookFlight", "{}"))
+        val waitingOnLlm = running.applyToolEvent(ToolCallUiEvent.Completed("c2", "bookFlight", "{}", "ok"))
+        val earlier = ChatTurn(id = 1, prompt = "hello").completed("hi")
+
+        assertEquals("bookFlight", listOf(earlier, running).activeToolCall()?.functionName)
+        assertEquals("bookFlight", listOf(earlier, waitingOnLlm).activeToolCall()?.functionName)
+        assertNull(listOf(earlier).activeToolCall())
+        assertNull(listOf(waitingOnLlm.completed("done")).activeToolCall())
+        assertNull(listOf(ChatTurn(id = 3, prompt = "hi")).activeToolCall())
+    }
+
+    @Test
     fun thinkingOnlyWhileWaitingOnTheLlm() {
         val started = ChatTurn(id = 1, prompt = "hello")
         val toolRunning = started.applyToolEvent(ToolCallUiEvent.Started("c1", "searchTrips", "{}"))

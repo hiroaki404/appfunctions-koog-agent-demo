@@ -20,6 +20,13 @@ data class ChatTurn(
     fun failed(error: String): ChatTurn = copy(response = null, error = error, isRunning = false)
 }
 
+/**
+ * The latest tool call of the turn still being answered, finished or not. An AppFunction call
+ * returns in milliseconds, so this keeps its app in view while the agent goes on to the next step.
+ */
+fun List<ChatTurn>.activeToolCall(): ToolCallUiModel? =
+    lastOrNull()?.takeIf { it.isRunning }?.toolCalls?.calls?.lastOrNull()
+
 /** Applies [transform] to the turn with [id]; a no-op if the turn no longer exists (e.g. after 「新しい会話」). */
 fun List<ChatTurn>.updateTurn(id: Int, transform: (ChatTurn) -> ChatTurn): List<ChatTurn> =
     map { turn -> if (turn.id == id) transform(turn) else turn }
