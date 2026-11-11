@@ -13,6 +13,10 @@ val Line = Color(0xFFDAD7D2)
 val Sea = Color(0xFF00778D)
 val SeaC = Color(0xFFCFEEF7)
 
+/** Nature spots such as zoos on the itinerary card. */
+val Leaf = Color(0xFF397949)
+val LeafC = Color(0xFFE3F1E6)
+
 /** Accent that marks what the AI did. */
 val Sun = Color(0xFF985535)
 val SunC = Color(0xFFFFE4D6)

@@ -52,6 +52,11 @@ object TravelRules {
     /** Whether [city] is one of the Japanese city names flights are operated between. */
     fun isSupportedCity(city: String): Boolean = city in cities
 
+    private val airportCodes = mapOf("東京" to "HND", "札幌" to "CTS")
+
+    /** The airport code shown on the boarding pass for [city], or null for a city without one. */
+    fun airportCodeOf(city: String): String? = airportCodes[city]
+
     /** Returns the flight number for a city pair, or null if no flight is operated. */
     fun flightNumberFor(from: String, to: String): String? = flightNumbers[from to to]
 

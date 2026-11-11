@@ -8,17 +8,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
-class TripViewModel(private val repository: TripRepository) : ViewModel() {
+class TripViewModel(
+    private val repository: TripRepository,
+    /** Today's date, read on every update; replaceable so the upcoming/past split can be pinned. */
+    private val today: () -> LocalDate = LocalDate::now,
+) : ViewModel() {
     val uiState: StateFlow<TripUiState> = combine(
         repository.savedItineraries,
         repository.savedFlightBookings,
     ) { itineraries, flightBookings ->
-        TripUiState(
-            // Newest trips first, judged by the first day's date (yyyy-MM-dd sorts as text).
-            itineraries = itineraries.sortedByDescending { it.itinerary.days.firstOrNull()?.date.orEmpty() },
-            flightBookings = flightBookings,
-        )
+        tripUiState(itineraries, flightBookings, today())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TripUiState())
 
     fun seedUpcomingTrip() {
