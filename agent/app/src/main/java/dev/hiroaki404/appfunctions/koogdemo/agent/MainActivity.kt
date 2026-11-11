@@ -7,7 +7,12 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -152,10 +157,9 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
     }
 
     // Follow the conversation as it grows: a new turn, each tool call card and the answer all land
-    // at the bottom, so scroll there on every change. The end marker is the last item, and
-    // scrolling to it stops at the end of the list.
+    // at the bottom, so scroll there on every change.
     LaunchedEffect(turns) {
-        if (turns.isNotEmpty()) listState.animateScrollToItem(turns.size)
+        if (turns.isNotEmpty()) listState.smoothScrollToEnd()
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -221,6 +225,32 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
             },
         )
     }
+}
+
+/** Scroll speed toward the end of the conversation, in pixels per millisecond. */
+private const val ScrollPixelsPerMillisecond = 1.2f
+
+/**
+ * Scrolls to the end of the list at a calm speed that the audience can follow, instead of
+ * `animateScrollToItem`'s quick jump. Expects the list to end with a zero-height marker item.
+ */
+private suspend fun LazyListState.smoothScrollToEnd() {
+    // Let the new content be measured before reading the layout.
+    withFrameNanos { }
+    val info = layoutInfo
+    val last = info.visibleItemsInfo.lastOrNull() ?: return
+    val endIndex = info.totalItemsCount - 1
+    if (last.index < endIndex - 1) {
+        // Far from the end, e.g. a whole sample conversation loaded at once: no need to animate.
+        scrollToItem(endIndex)
+        return
+    }
+    // After the last visible item comes at most one spacing and the zero-height end marker.
+    val trailing = if (last.index == endIndex) 0 else info.mainAxisItemSpacing
+    val distance = last.offset + last.size + trailing + info.afterContentPadding - info.viewportEndOffset
+    if (distance <= 0) return
+    val millis = (distance / ScrollPixelsPerMillisecond).toInt().coerceIn(350, 1000)
+    animateScrollBy(distance.toFloat(), tween(millis, easing = FastOutSlowInEasing))
 }
 
 /**
