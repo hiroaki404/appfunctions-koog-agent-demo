@@ -53,6 +53,7 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -64,7 +65,6 @@ import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink2
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Line
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Sea
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.SeaC
-import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Surface
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Surface2
 
 /**
@@ -130,8 +130,10 @@ fun AppBand(state: AppBandState, modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .height(56.dp)
-            .clip(BandShape)
-            .background(Surface)
+            // A white card with a shadow, so the band stands out from the screen and the
+            // conversation scrolling under it.
+            .shadow(elevation = 6.dp, shape = BandShape, ambientColor = Ink, spotColor = Ink)
+            .background(Color.White, BandShape)
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
