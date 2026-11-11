@@ -6,7 +6,7 @@ import dev.hiroaki404.appfunctions.koogdemo.tripapp.Spot
 
 /** Demo data shared by the database creation callback and the debug actions on the screen. */
 object TripSeed {
-    /** The past trip every fresh database starts with. */
+    /** The past trip to Hokkaido the demo's agent looks up to avoid places visited last year. */
     val pastTrip = Itinerary(
         title = "2025年夏の北海道",
         days = listOf(
@@ -25,6 +25,54 @@ object TripSeed {
             ),
         ),
     )
+
+    /** Older trips that fill the records section; none of them is in Hokkaido. */
+    private val olderTrips = listOf(
+        Itinerary(
+            title = "2025年春の京都",
+            days = listOf(
+                ItineraryDay(
+                    date = "2025-04-05",
+                    spots = listOf(
+                        Spot("清水寺", "東山にある寺。舞台から桜に囲まれた京都の街を眺めた。"),
+                        Spot("伏見稲荷大社", "千本鳥居で知られる神社。夕方に鳥居のトンネルを歩いた。"),
+                    ),
+                ),
+                ItineraryDay(
+                    date = "2025-04-06",
+                    spots = listOf(
+                        Spot("嵐山", "竹林の小径と渡月橋を散策した。"),
+                    ),
+                ),
+            ),
+        ),
+        Itinerary(
+            title = "2024年秋の沖縄",
+            days = listOf(
+                ItineraryDay(
+                    date = "2024-10-12",
+                    spots = listOf(
+                        Spot("首里城", "琉球王国の城。復元工事の様子を見学した。"),
+                    ),
+                ),
+                ItineraryDay(
+                    date = "2024-10-13",
+                    spots = listOf(
+                        Spot("美ら海水族館", "ジンベエザメが泳ぐ大水槽を見た。"),
+                    ),
+                ),
+                ItineraryDay(
+                    date = "2024-10-14",
+                    spots = listOf(
+                        Spot("古宇利島", "橋を渡って行く島。エメラルドグリーンの海を眺めた。"),
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    /** The past trips every fresh database starts with, newest first; [pastTrip] is the first. */
+    val pastTrips: List<Itinerary> = listOf(pastTrip) + olderTrips
 
     /** A sample of the trip the agent plans in the demo: December in Hokkaido. */
     val upcomingTrip = Itinerary(

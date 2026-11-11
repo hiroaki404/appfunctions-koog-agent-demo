@@ -62,7 +62,7 @@ abstract class TripDatabase : RoomDatabase() {
             Room.inMemoryDatabaseBuilder(context, TripDatabase::class.java).build()
     }
 
-    /** Inserts the past trip when the database file is first created or recreated by a schema change. */
+    /** Inserts the past trips when the database file is first created or recreated by a schema change. */
     private object SeedCallback : RoomDatabase.Callback() {
         override fun onCreate(db: SupportSQLiteDatabase) = seed(db)
 
@@ -70,13 +70,15 @@ abstract class TripDatabase : RoomDatabase() {
         override fun onDestructiveMigration(db: SupportSQLiteDatabase) = seed(db)
 
         private fun seed(db: SupportSQLiteDatabase) {
-            val seed = TripSeed.pastTrip.toEntity()
-            val values = ContentValues().apply {
-                put("title", seed.title)
-                put("daysJson", seed.daysJson)
-                put("addedByAi", 0)
+            TripSeed.pastTrips.forEach { trip ->
+                val seed = trip.toEntity()
+                val values = ContentValues().apply {
+                    put("title", seed.title)
+                    put("daysJson", seed.daysJson)
+                    put("addedByAi", 0)
+                }
+                db.insert(ItineraryEntity.TABLE_NAME, SQLiteDatabase.CONFLICT_NONE, values)
             }
-            db.insert(ItineraryEntity.TABLE_NAME, SQLiteDatabase.CONFLICT_NONE, values)
         }
     }
 }

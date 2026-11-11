@@ -87,7 +87,8 @@ Verify the functions are published (the command lists every app's functions; loo
 adb shell cmd app_function list-app-functions | grep koogdemo
 ```
 
-The travel app seeds a past trip ("2025年夏の北海道") when its database is first created. Its screen has debug buttons to
+The travel app seeds three past trips ("2025年夏の北海道", "2025年春の京都" and "2024年秋の沖縄") when its database is
+first created. Its screen has debug buttons to
 insert the upcoming December trip and to reset to the initial state.
 
 ### 3. Build `agent`

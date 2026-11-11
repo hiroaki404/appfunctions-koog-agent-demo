@@ -60,12 +60,12 @@ class TripRepository(private val database: TripDatabase) {
         dao.insertItinerary(TripSeed.upcomingTrip.toEntity())
     }
 
-    /** Debug action: clears everything and restores the initial state with only the past trip. */
+    /** Debug action: clears everything and restores the initial state with only the past trips. */
     suspend fun resetToInitialState() {
         database.withTransaction {
             dao.deleteAllItineraries()
             dao.deleteAllFlightBookings()
-            dao.insertItinerary(TripSeed.pastTrip.toEntity())
+            TripSeed.pastTrips.forEach { dao.insertItinerary(it.toEntity()) }
         }
     }
 }

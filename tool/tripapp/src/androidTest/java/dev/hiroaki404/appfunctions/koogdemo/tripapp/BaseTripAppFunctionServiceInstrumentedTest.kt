@@ -107,13 +107,13 @@ class BaseTripAppFunctionServiceInstrumentedTest {
     }
 
     @Test
-    fun resetRestoresOnlyPastTrip() = runBlocking {
+    fun resetRestoresOnlyPastTrips() = runBlocking {
         service.saveItinerary(TripSeed.upcomingTrip)
         service.bookFlight("東京", "札幌", "2026-12-20")
 
         repository.resetToInitialState()
 
-        assertEquals(listOf(TripSeed.pastTrip), repository.itineraries.first())
+        assertEquals(TripSeed.pastTrips, repository.itineraries.first())
         assertEquals(emptyList<FlightBooking>(), repository.flightBookings.first())
     }
 
