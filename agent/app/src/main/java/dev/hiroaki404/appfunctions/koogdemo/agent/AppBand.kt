@@ -106,7 +106,9 @@ fun appBandState(
                 runningLabel = runningLabel.takeIf { group.packageName == runningPackage },
                 isNew = discovery != null && group.packageName in discovery.packageNames,
             )
-        },
+        }
+            // The app in use comes first, next to the agent, so its label gets the most room.
+            .sortedByDescending { it.runningLabel != null },
         systemAppCount = system.size,
         systemRunningLabel = runningLabel.takeIf { system.any { it.packageName == runningPackage } },
         isCalling = running != null,
@@ -136,10 +138,16 @@ fun AppBand(state: AppBandState, modifier: Modifier = Modifier) {
     ) {
         AppIcon(LocalContext.current.packageName, size = 32.dp)
         Connector(active = state.isCalling)
+        val scrollState = rememberScrollState()
+        val inUse = state.apps.firstOrNull { it.runningLabel != null }?.packageName
+        // Bring the app in use, now first, back into view if the row was scrolled.
+        LaunchedEffect(inUse) {
+            if (inUse != null) scrollState.animateScrollTo(0)
+        }
         Row(
             modifier = Modifier
                 .weight(1f)
-                .horizontalScroll(rememberScrollState())
+                .horizontalScroll(scrollState)
                 // Room for a new app's ripple, which the scroll container would otherwise clip.
                 .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -47,6 +47,18 @@ class AppBandTest {
     }
 
     @Test
+    fun theAppInUseMovesToTheFrontAndTheRestKeepTheirOrder() {
+        val withThird = groups + group("notes", "メモ", isSystem = false)
+        val state = appBandState(withThird, running("message", displayName = "メッセージの送信"))
+
+        assertEquals(listOf("message", "trip", "notes"), state.apps.map { it.packageName })
+        assertEquals(
+            listOf("trip", "message", "notes"),
+            appBandState(withThird, running = null).apps.map { it.packageName },
+        )
+    }
+
+    @Test
     fun appsInTheDiscoveryAreMarkedNew() {
         val discovery = AppDiscovery(id = 1, packageNames = setOf("message"), functions = emptyList())
         val state = appBandState(groups, running = null, discovery = discovery)
