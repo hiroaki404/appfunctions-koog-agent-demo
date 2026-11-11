@@ -9,6 +9,7 @@ import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -54,11 +56,17 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
      */
     private val appFunctions: StateFlow<List<AppFunctionMetadata>?> =
         (appFunctionManager?.discoverAppFunctions() ?: emptyFlow())
-            .map { functions -> functions.filter(::isConvertibleToTool) }
-            .onEach { functions ->
-                Log.d(DISCOVERY_TAG, "Found ${functions.size} app functions")
-                _availableTools.update { state -> state.update(functions.map { it.toAvailableFunction() }) }
+            .map { all ->
+                val functions = all.filter(::isConvertibleToTool)
+                // Display names come from the provider apps' resources, so read them off the main thread.
+                functions to functions.map { it.toAvailableFunction(application.resolveFunctionDisplayName(it)) }
             }
+            .flowOn(Dispatchers.IO)
+            .onEach { (functions, available) ->
+                Log.d(DISCOVERY_TAG, "Found ${functions.size} app functions")
+                _availableTools.update { state -> state.update(available) }
+            }
+            .map { (functions, _) -> functions }
             .catch { e -> Log.e(DISCOVERY_TAG, "Watching AppFunctions failed", e) }
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -142,4 +150,5 @@ private fun isConvertibleToTool(metadata: AppFunctionMetadata): Boolean =
         .onFailure { Log.w(DISCOVERY_TAG, "Skipping unsupported AppFunction ${metadata.id}", it) }
         .isSuccess
 
-private fun AppFunctionMetadata.toAvailableFunction() = AvailableFunction(id, packageName, description)
+private fun AppFunctionMetadata.toAvailableFunction(displayName: String?) =
+    AvailableFunction(id, packageName, description, displayName)

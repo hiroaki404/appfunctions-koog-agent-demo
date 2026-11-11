@@ -145,7 +145,9 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val toolGroups = remember(availableTools) { availableTools.groups(viewModel::providerAppOf) }
-    val bandState = remember(toolGroups, turns) { appBandState(toolGroups, turns.activeToolCall()) }
+    val bandState = remember(toolGroups, turns, availableTools.discovery) {
+        appBandState(toolGroups, turns.activeToolCall(), availableTools.discovery)
+    }
 
     LaunchedEffect(turns.size) {
         if (turns.isNotEmpty()) listState.animateScrollToItem(turns.lastIndex)
@@ -180,6 +182,11 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
             }
         }
         AppBand(state = bandState, modifier = Modifier.clearFocusOnTapOutsideInput())
+        DiscoveryNotice(
+            discovery = availableTools.discovery,
+            labelOf = { packageName -> viewModel.providerAppOf(packageName).label },
+            modifier = Modifier.clearFocusOnTapOutsideInput(),
+        )
         LazyColumn(
             state = listState,
             modifier = Modifier

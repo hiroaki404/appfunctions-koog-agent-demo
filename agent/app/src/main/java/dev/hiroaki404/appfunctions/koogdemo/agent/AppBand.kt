@@ -1,7 +1,29 @@
 package dev.hiroaki404.appfunctions.koogdemo.agent
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.Column
+import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Bg
+import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink
+import kotlinx.coroutines.delay
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -49,7 +71,13 @@ import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Surface2
  * An app the user installed, as one icon on the band; [runningLabel] is set while the agent is using
  * it, i.e. its function is the latest one called in the turn being answered.
  */
-data class AppBandApp(val packageName: String, val label: String, val runningLabel: String? = null)
+data class AppBandApp(
+    val packageName: String,
+    val label: String,
+    val runningLabel: String? = null,
+    /** Found while the agent was running ([AppDiscovery]), so its icon pops in. */
+    val isNew: Boolean = false,
+)
 
 /** What the band shows: installed apps one by one, system apps folded into a single chip. */
 data class AppBandState(
@@ -62,7 +90,11 @@ data class AppBandState(
 )
 
 /** Builds the band from the tool list's groups and the turn's latest tool call ([ChatTurn] `activeToolCall`). */
-fun appBandState(groups: List<AvailableToolsGroup>, running: ToolCallUiModel?): AppBandState {
+fun appBandState(
+    groups: List<AvailableToolsGroup>,
+    running: ToolCallUiModel?,
+    discovery: AppDiscovery? = null,
+): AppBandState {
     val runningPackage = running?.packageName
     val runningLabel = running?.let { it.displayName ?: it.functionName }
     val (system, installed) = groups.partition { it.app.isSystem }
@@ -72,6 +104,7 @@ fun appBandState(groups: List<AvailableToolsGroup>, running: ToolCallUiModel?): 
                 packageName = group.packageName,
                 label = group.app.label,
                 runningLabel = runningLabel.takeIf { group.packageName == runningPackage },
+                isNew = discovery != null && group.packageName in discovery.packageNames,
             )
         },
         systemAppCount = system.size,
@@ -106,12 +139,16 @@ fun AppBand(state: AppBandState, modifier: Modifier = Modifier) {
         Row(
             modifier = Modifier
                 .weight(1f)
-                .horizontalScroll(rememberScrollState()),
+                .horizontalScroll(rememberScrollState())
+                // Room for a new app's ripple, which the scroll container would otherwise clip.
+                .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             state.apps.forEach { app ->
-                key(app.packageName) { BandApp(app) }
+                key(app.packageName) {
+                    if (app.isNew) NewBandApp(app) else BandApp(app)
+                }
             }
         }
         if (state.systemAppCount > 0) {
@@ -179,6 +216,103 @@ private fun BandApp(app: AppBandApp, modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
             )
+        }
+    }
+}
+
+/** A just-found app: the icon pops in with a bounce, then a ripple spreads from it three times. */
+@Composable
+private fun NewBandApp(app: AppBandApp, modifier: Modifier = Modifier) {
+    val appear = remember { MutableTransitionState(false).apply { targetState = true } }
+    val ripple = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(400)
+        repeat(3) {
+            ripple.snapTo(0f)
+            ripple.animateTo(1f, tween(900, easing = LinearEasing))
+        }
+        ripple.snapTo(0f)
+    }
+    AnimatedVisibility(
+        visibleState = appear,
+        modifier = modifier,
+        enter = scaleIn(spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessLow)) + fadeIn(),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            if (ripple.value > 0f) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer {
+                            val scale = 1f + ripple.value * 0.5f
+                            scaleX = scale
+                            scaleY = scale
+                            alpha = 1f - ripple.value
+                        }
+                        .border(2.dp, Sea, CircleShape),
+                )
+            }
+            BandApp(app)
+        }
+    }
+}
+
+/**
+ * A notice under the band announcing apps found while the agent was running: 「メッセージアプリを見つけました」
+ * over the functions they provide. Shown for five seconds per find.
+ */
+@Composable
+fun DiscoveryNotice(discovery: AppDiscovery?, labelOf: (packageName: String) -> String, modifier: Modifier = Modifier) {
+    var visible by remember { mutableStateOf(false) }
+    // Keeps the text while the notice slides away after the discovery is cleared.
+    var shown by remember { mutableStateOf<AppDiscovery?>(null) }
+    LaunchedEffect(discovery?.id) {
+        if (discovery == null) {
+            visible = false
+            return@LaunchedEffect
+        }
+        shown = discovery
+        visible = true
+        delay(5_000)
+        visible = false
+    }
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier,
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically() + fadeOut(),
+    ) {
+        val current = shown ?: return@AnimatedVisibility
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Ink)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp), tint = SeaC)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    discoveredAppsText(current.packageNames.map(labelOf)),
+                    color = Bg,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+                val functions = discoveredFunctionsText(current.functions)
+                if (functions.isNotEmpty()) {
+                    Text(
+                        functions,
+                        color = Line,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }

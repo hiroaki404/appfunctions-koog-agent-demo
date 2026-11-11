@@ -1,5 +1,11 @@
 package dev.hiroaki404.appfunctions.koogdemo.agent
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -69,13 +75,24 @@ fun ToolCountPill(state: AvailableToolsState, onClick: () -> Unit, modifier: Mod
             modifier = Modifier.size(18.dp),
             tint = if (highlighted) Color.White else Sea,
         )
-        Text(
-            state.functions?.size?.toString() ?: "–",
-            color = if (highlighted) Color.White else Ink,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
+        // A new count rolls in from below when it grows and from above when it shrinks.
+        AnimatedContent(
+            targetState = state.functions?.size,
+            transitionSpec = {
+                val grew = (targetState ?: 0) > (initialState ?: 0)
+                (slideInVertically { if (grew) it else -it } + fadeIn()) togetherWith
+                    (slideOutVertically { if (grew) -it else it } + fadeOut())
+            },
+            label = "toolCount",
+        ) { count ->
+            Text(
+                count?.toString() ?: "–",
+                color = if (highlighted) Color.White else Ink,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
         if (highlighted) {
             Text(
                 "+$newCount",

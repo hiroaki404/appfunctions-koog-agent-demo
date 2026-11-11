@@ -47,6 +47,14 @@ class AppBandTest {
     }
 
     @Test
+    fun appsInTheDiscoveryAreMarkedNew() {
+        val discovery = AppDiscovery(id = 1, packageNames = setOf("message"), functions = emptyList())
+        val state = appBandState(groups, running = null, discovery = discovery)
+
+        assertEquals(listOf(false, true), state.apps.map { it.isNew })
+    }
+
+    @Test
     fun aRunningSystemFunctionLightsTheSystemChipWithItsNameAsFallback() {
         val state = appBandState(groups, running("settings"))
 

@@ -2,6 +2,7 @@ package dev.hiroaki404.appfunctions.koogdemo.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AvailableToolsStateTest {
@@ -56,6 +57,62 @@ class AvailableToolsStateTest {
 
         assertEquals(listOf("message", "travel", "settings"), groups.map { it.packageName })
         assertEquals(listOf(true, false, false), groups.map { it.hasNew })
+    }
+
+    @Test
+    fun aNewAppBecomesADiscoveryWithItsFunctions() {
+        val state = AvailableToolsState()
+            .update(listOf(bookFlight, battery))
+            .update(listOf(bookFlight, battery, sendMessage))
+
+        assertEquals(setOf("message"), state.discovery?.packageNames)
+        assertEquals(listOf(sendMessage), state.discovery?.functions)
+    }
+
+    @Test
+    fun theFirstResultAndMoreFunctionsFromAKnownAppAreNoDiscovery() {
+        val searchTrips = AvailableFunction("travel.Base#searchTrips", "travel", "")
+        val state = AvailableToolsState().update(listOf(bookFlight))
+
+        assertNull(state.discovery)
+        assertNull(state.update(listOf(bookFlight, searchTrips)).discovery)
+    }
+
+    @Test
+    fun everyFindGetsANewIdEvenAfterTheLastWasCleared() {
+        val first = AvailableToolsState()
+            .update(listOf(bookFlight))
+            .update(listOf(bookFlight, sendMessage))
+        val second = first.acknowledged()
+            .update(listOf(bookFlight))
+            .update(listOf(bookFlight, sendMessage))
+
+        assertNull(first.acknowledged().discovery)
+        assertTrue(second.discovery!!.id > first.discovery!!.id)
+    }
+
+    @Test
+    fun uninstallingAFoundAppDropsItFromTheDiscovery() {
+        val state = AvailableToolsState()
+            .update(listOf(bookFlight))
+            .update(listOf(bookFlight, sendMessage))
+            .update(listOf(bookFlight))
+
+        assertNull(state.discovery)
+    }
+
+    @Test
+    fun discoveredAppsTextAddsアプリOnlyWhenMissing() {
+        assertEquals("メッセージアプリを見つけました", discoveredAppsText(listOf("メッセージ")))
+        assertEquals("旅行アプリを見つけました", discoveredAppsText(listOf("旅行アプリ")))
+        assertEquals("2個のアプリを見つけました", discoveredAppsText(listOf("メッセージ", "旅行")))
+    }
+
+    @Test
+    fun discoveredFunctionsTextPrefersDisplayNames() {
+        val named = sendMessage.copy(displayName = "メッセージの送信")
+
+        assertEquals("メッセージの送信・bookFlight", discoveredFunctionsText(listOf(named, bookFlight)))
     }
 
     @Test
