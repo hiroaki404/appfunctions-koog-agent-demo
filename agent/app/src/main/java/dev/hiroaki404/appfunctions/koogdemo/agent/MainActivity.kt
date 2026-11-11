@@ -22,9 +22,11 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -149,8 +151,11 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
         appBandState(toolGroups, turns.activeToolCall(), availableTools.discovery)
     }
 
-    LaunchedEffect(turns.size) {
-        if (turns.isNotEmpty()) listState.animateScrollToItem(turns.lastIndex)
+    // Follow the conversation as it grows: a new turn, each tool call card and the answer all land
+    // at the bottom, so scroll there on every change. The end marker is the last item, and
+    // scrolling to it stops at the end of the list.
+    LaunchedEffect(turns) {
+        if (turns.isNotEmpty()) listState.animateScrollToItem(turns.size)
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -199,6 +204,8 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
             items(turns, key = { it.id }) { turn ->
                 ChatTurnItem(turn)
             }
+            // End marker for the auto-scroll above; takes no space.
+            item(key = "end") { Spacer(Modifier.height(0.dp)) }
         }
         ChatInputBar(
             prompt = prompt,
