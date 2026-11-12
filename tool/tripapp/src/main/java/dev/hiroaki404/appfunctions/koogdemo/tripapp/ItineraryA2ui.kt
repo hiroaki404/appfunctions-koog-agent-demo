@@ -12,6 +12,9 @@ import kotlinx.serialization.json.put
 private const val A2UI_VERSION = "v0.9.1"
 private const val BASIC_CATALOG_ID = "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
 
+/** The app's brand color (the sea blue of its theme), sent as the surface theme's `primaryColor`. */
+internal const val ITINERARY_PRIMARY_COLOR = "#00778D"
+
 /** The A2UI surface id for the itinerary saved with [itineraryId]. Itinerary ids are unique. */
 fun itinerarySurfaceId(itineraryId: String): String = "itinerary-$itineraryId"
 
@@ -30,6 +33,7 @@ fun itineraryA2uiJson(itineraryId: String, itinerary: Itinerary): String {
                     buildJsonObject {
                         put("surfaceId", surfaceId)
                         put("catalogId", BASIC_CATALOG_ID)
+                        put("theme", buildJsonObject { put("primaryColor", ITINERARY_PRIMARY_COLOR) })
                     },
                 )
             },
@@ -96,10 +100,24 @@ private fun itineraryComponents(itinerary: Itinerary): JsonArray = buildJsonArra
             val spotId = "$dayId-spot$spotIndex"
             node(spotId, "Row") {
                 put("align", "center")
-                put("children", ids("$spotId-icon", "$spotId-text"))
+                put("children", ids("$spotId-icon", "$spotId-body"))
             }
             node("$spotId-icon", "Icon") { put("name", "locationOn") }
+            // The name, with the description under it in small text when there is one.
+            val hasDescription = spot.description.isNotBlank()
+            node("$spotId-body", "Column") {
+                put(
+                    "children",
+                    if (hasDescription) ids("$spotId-text", "$spotId-description") else ids("$spotId-text"),
+                )
+            }
             node("$spotId-text", "Text") { put("text", spot.name) }
+            if (hasDescription) {
+                node("$spotId-description", "Text") {
+                    put("variant", "caption")
+                    put("text", spot.description)
+                }
+            }
         }
     }
 }

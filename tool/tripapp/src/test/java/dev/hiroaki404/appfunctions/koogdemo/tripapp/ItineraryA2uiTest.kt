@@ -38,6 +38,19 @@ class ItineraryA2uiTest {
     }
 
     @Test
+    fun createSurfaceCarriesTheBrandColorAsThePrimaryColor() {
+        val create = messages()[0].jsonObject.getValue("createSurface").jsonObject
+        assertEquals("#00778D", create.getValue("theme").jsonObject.text("primaryColor"))
+    }
+
+    @Test
+    fun spotDescriptionsAreShownAsCaptions() {
+        val captions = components().filter { it.text("variant") == "caption" }.mapNotNull { it.text("text") }
+        itinerary.days.flatMap { it.spots }.filter { it.description.isNotBlank() }
+            .forEach { spot -> assertTrue(spot.name, spot.description in captions) }
+    }
+
+    @Test
     fun hasRootComponentAndTitle() {
         val components = components()
         assertTrue(components.any { it.text("id") == "root" })
