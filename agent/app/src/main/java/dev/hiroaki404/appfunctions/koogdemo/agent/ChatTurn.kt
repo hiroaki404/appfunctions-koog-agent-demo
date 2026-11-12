@@ -18,6 +18,9 @@ data class ChatTurn(
     fun withAwaitingApproval(functionName: String, awaiting: Boolean): ChatTurn =
         copy(toolCalls = toolCalls.withAwaitingApproval(functionName, awaiting))
 
+    fun withApprovalDecision(functionName: String, decision: ApprovalDecision): ChatTurn =
+        copy(toolCalls = toolCalls.withApprovalDecision(functionName, decision))
+
     fun withA2uiSurface(functionName: String, surfaceId: String): ChatTurn =
         copy(toolCalls = toolCalls.withA2uiSurface(functionName, surfaceId))
 

@@ -45,6 +45,9 @@ sealed interface ToolCallUiEvent {
     ) : ToolCallUiEvent
 }
 
+/** How the user answered a call that needed their approval. */
+enum class ApprovalDecision { Approved, Declined }
+
 enum class ToolCallStatus(val label: String) {
     Running("実行中"),
     Succeeded("成功"),
@@ -63,6 +66,8 @@ data class ToolCallUiModel(
     val displayName: String? = null,
     /** True while the call waits for the user to allow or decline it; [status] stays [ToolCallStatus.Running]. */
     val awaitingApproval: Boolean = false,
+    /** The user's answer to the approval request, or null if the call needed none (or is still waiting). */
+    val approval: ApprovalDecision? = null,
     /** The id of the A2UI surface the call returned, drawn under the card; null if it returned none. */
     val a2uiSurfaceId: String? = null,
 )
@@ -103,6 +108,21 @@ data class ToolCallUiState(val calls: List<ToolCallUiModel> = emptyList()) {
         if (index < 0) return this
         return copy(calls = calls.mapIndexed { currentIndex, call ->
             if (currentIndex == index) call.copy(awaitingApproval = awaiting) else call
+        })
+    }
+
+    /**
+     * Records the user's answer on the latest call of [functionName] that is waiting for approval, and
+     * ends the wait. The card keeps the answer so an allowed and a declined call look different. A no-op
+     * if no such call is waiting.
+     */
+    fun withApprovalDecision(functionName: String, decision: ApprovalDecision): ToolCallUiState {
+        val index = calls.indexOfLast { call ->
+            call.status == ToolCallStatus.Running && call.functionName == functionName && call.awaitingApproval
+        }
+        if (index < 0) return this
+        return copy(calls = calls.mapIndexed { currentIndex, call ->
+            if (currentIndex == index) call.copy(awaitingApproval = false, approval = decision) else call
         })
     }
 

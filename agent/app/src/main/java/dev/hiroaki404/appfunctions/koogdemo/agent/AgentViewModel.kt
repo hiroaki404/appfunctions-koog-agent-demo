@@ -137,8 +137,12 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         synchronized(pendingApprovals) { pendingApprovals += pending }
         _turns.update { turns -> turns.updateTurn(turnId) { it.withAwaitingApproval(functionName, true) } }
         try {
-            return pending.answer.await()
+            val approved = pending.answer.await()
+            val decision = if (approved) ApprovalDecision.Approved else ApprovalDecision.Declined
+            _turns.update { turns -> turns.updateTurn(turnId) { it.withApprovalDecision(functionName, decision) } }
+            return approved
         } finally {
+            // Only still set if the wait was cancelled; after an answer the decision has cleared it.
             synchronized(pendingApprovals) { pendingApprovals -= pending }
             _turns.update { turns -> turns.updateTurn(turnId) { it.withAwaitingApproval(functionName, false) } }
         }

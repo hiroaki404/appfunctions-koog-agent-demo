@@ -87,11 +87,17 @@ fun ToolCallCard(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ToolStatusIcon(call.status)
+            val declined = call.approval == ApprovalDecision.Declined
+            if (declined && call.status != ToolCallStatus.Running) {
+                // Not run at all: neither a success nor a failure of the app.
+                StatusCircle(Ink2, Icons.Rounded.Close)
+            } else {
+                ToolStatusIcon(call.status)
+            }
             Text(
                 call.displayName ?: call.functionName,
                 modifier = Modifier.weight(1f),
-                color = Ink,
+                color = if (declined) Ink2 else Ink,
                 fontFamily = if (call.displayName == null) FontFamily.Monospace else null,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -135,10 +141,13 @@ fun ToolCallCard(
         if (call.awaitingApproval) {
             ApprovalButtons(onApprove = onApprove, onDecline = onDecline)
         }
+        // Where the buttons were, the user's answer stays.
+        call.approval?.let { ApprovalBadge(it) }
         call.result?.let { raw ->
             Section(label = "結果") {
                 val isError = raw.startsWith("Error:")
                 when {
+                    call.approval == ApprovalDecision.Declined -> PlainValue("ユーザーが拒否したため、実行していません", color = Ink2)
                     isError -> PlainValue(raw, color = MaterialTheme.colorScheme.error)
                     result == null -> PlainValue(raw, maxLines = if (expanded) Int.MAX_VALUE else 2)
                     expanded -> JsonFields(result, expanded = true)
@@ -161,6 +170,35 @@ private fun ApprovalButtons(onApprove: () -> Unit, onDecline: () -> Unit) {
         Button(onClick = onApprove, modifier = Modifier.weight(1f)) {
             Text("許可する", fontWeight = FontWeight.SemiBold)
         }
+    }
+}
+
+/** What the user answered: allowed in the orange of AI actions, declined in grey. */
+@Composable
+private fun ApprovalBadge(decision: ApprovalDecision) {
+    val approved = decision == ApprovalDecision.Approved
+    val color = if (approved) Sun else Ink2
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .border(1.dp, color, CircleShape)
+            .padding(start = 5.dp, end = 8.dp, top = 1.dp, bottom = 1.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (approved) Icons.Rounded.Check else Icons.Rounded.Close,
+            contentDescription = null,
+            modifier = Modifier.size(12.dp),
+            tint = color,
+        )
+        Text(
+            if (approved) "ユーザーが許可しました" else "ユーザーが拒否しました",
+            color = color,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
     }
 }
 

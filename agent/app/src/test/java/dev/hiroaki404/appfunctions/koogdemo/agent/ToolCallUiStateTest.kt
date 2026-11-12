@@ -88,6 +88,30 @@ class ToolCallUiStateTest {
     }
 
     @Test
+    fun approvalDecisionEndsTheWaitAndIsKeptWhenTheCallCompletes() {
+        val approved = ToolCallUiState()
+            .apply(ToolCallUiEvent.Started(null, "bookFlight", "{}"))
+            .withAwaitingApproval("bookFlight", true)
+            .withApprovalDecision("bookFlight", ApprovalDecision.Approved)
+        val declined = ToolCallUiState()
+            .apply(ToolCallUiEvent.Started(null, "bookFlight", "{}"))
+            .withAwaitingApproval("bookFlight", true)
+            .withApprovalDecision("bookFlight", ApprovalDecision.Declined)
+            .apply(ToolCallUiEvent.Completed(null, "bookFlight", "{}", "Error: The user declined this action."))
+
+        assertFalse(approved.calls.single().awaitingApproval)
+        assertEquals(ApprovalDecision.Approved, approved.calls.single().approval)
+        assertEquals(ApprovalDecision.Declined, declined.calls.single().approval)
+    }
+
+    @Test
+    fun approvalDecisionWithoutAWaitingCallChangesNothing() {
+        val state = ToolCallUiState().apply(ToolCallUiEvent.Started(null, "bookFlight", "{}"))
+
+        assertEquals(state, state.withApprovalDecision("bookFlight", ApprovalDecision.Approved))
+    }
+
+    @Test
     fun a2uiSurfaceIsAttachedToTheLatestRunningCallOfTheFunctionAndKeptWhenItCompletes() {
         val state = ToolCallUiState()
             .apply(ToolCallUiEvent.Started(null, "saveItinerary", "{}"))
