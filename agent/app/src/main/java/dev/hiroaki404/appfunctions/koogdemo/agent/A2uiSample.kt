@@ -2,15 +2,13 @@ package dev.hiroaki404.appfunctions.koogdemo.agent
 
 import androidx.a2ui.compose.runtime.A2uiMessageParser
 import androidx.a2ui.compose.ui.A2uiMessageProcessor
-import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1
 import androidx.a2ui.model.processor.processInput
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.a2ui.A2uiSurface
-import androidx.compose.material3.a2ui.catalog.MaterialA2uiBasicCatalogV1Defaults
-import androidx.compose.material3.a2ui.catalog.materialA2uiBasicCatalogV1
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,7 +35,8 @@ const val SAMPLE_ITINERARY_A2UI_JSON = """
     "version": "v0.9.1",
     "createSurface": {
       "surfaceId": "$SAMPLE_ITINERARY_SURFACE_ID",
-      "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json"
+      "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json",
+      "theme": { "primaryColor": "#00778D" }
     }
   },
   {
@@ -95,15 +94,9 @@ fun A2uiMessagesSurface(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val primaryColor = remember(messagesJson) { a2uiPrimaryColorsOf(messagesJson)[surfaceId] }
     val processor = remember(messagesJson) {
-        // The sample has no images, videos or audio, so their renderers draw nothing.
-        val catalog = materialA2uiBasicCatalogV1(
-            image = MaterialA2uiBasicCatalogV1Defaults.image { _, _, _, _, _ -> },
-            video = MaterialA2uiBasicCatalogV1Defaults.video { _, _, _ -> },
-            audioPlayer = MaterialA2uiBasicCatalogV1Defaults.audioPlayer { _, _, _, _ -> },
-            functions = A2uiBasicCatalogV1.Functions(context),
-        )
-        A2uiMessageProcessor(catalogs = listOf(catalog)).also { processor ->
+        A2uiMessageProcessor(catalogs = listOf(brandedA2uiCatalog(context))).also { processor ->
             val parser = A2uiMessageParser()
             splitA2uiMessages(messagesJson).forEach { processor.processInput(parser, it) }
         }
@@ -111,7 +104,9 @@ fun A2uiMessagesSurface(
     LaunchedEffect(processor) { processor.collectMessages() }
     val surfaces by processor.activeSurfaces.collectAsState()
     surfaces.firstOrNull { it.id == surfaceId }?.let { surface ->
-        A2uiSurface(surfaceModel = surface, modifier = modifier)
+        CompositionLocalProvider(LocalA2uiPrimaryColor provides primaryColor) {
+            A2uiSurface(surfaceModel = surface, modifier = modifier)
+        }
     }
 }
 

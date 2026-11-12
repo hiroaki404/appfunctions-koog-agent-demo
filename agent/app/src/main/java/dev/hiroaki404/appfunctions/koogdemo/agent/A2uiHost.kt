@@ -4,11 +4,10 @@ import android.content.Context
 import android.util.Log
 import androidx.a2ui.compose.runtime.A2uiMessageParser
 import androidx.a2ui.compose.ui.A2uiMessageProcessor
-import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1
 import androidx.a2ui.model.processor.A2uiSurfaceModel
 import androidx.a2ui.model.processor.processInput
-import androidx.compose.material3.a2ui.catalog.MaterialA2uiBasicCatalogV1Defaults
-import androidx.compose.material3.a2ui.catalog.materialA2uiBasicCatalogV1
+import androidx.compose.ui.graphics.Color
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -38,20 +37,16 @@ internal fun deleteSurfaceMessage(surfaceId: String): String = buildJsonObject {
  */
 class A2uiHost(context: Context, scope: CoroutineScope) {
     private val parser = A2uiMessageParser()
-    private val processor = A2uiMessageProcessor(
-        catalogs = listOf(
-            materialA2uiBasicCatalogV1(
-                // Provider apps' cards show text and icons only, so images, videos and audio draw nothing.
-                image = MaterialA2uiBasicCatalogV1Defaults.image { _, _, _, _, _ -> },
-                video = MaterialA2uiBasicCatalogV1Defaults.video { _, _, _ -> },
-                audioPlayer = MaterialA2uiBasicCatalogV1Defaults.audioPlayer { _, _, _, _ -> },
-                functions = A2uiBasicCatalogV1.Functions(context),
-            ),
-        ),
-    )
+    private val processor = A2uiMessageProcessor(catalogs = listOf(brandedA2uiCatalog(context)))
+
+    // Each surface's theme primaryColor, read from its createSurface; set before the surface is drawn.
+    private val primaryColors = ConcurrentHashMap<String, Color>()
 
     /** The surfaces drawn now, in creation order. */
     val activeSurfaces: StateFlow<List<A2uiSurfaceModel>> = processor.activeSurfaces
+
+    /** The `primaryColor` the surface [surfaceId] asked for in its theme, or null; see [LocalA2uiPrimaryColor]. */
+    fun primaryColorOf(surfaceId: String): Color? = primaryColors[surfaceId]
 
     init {
         // User actions on a surface go out as processor.outboundEvents; sending them back to a provider
@@ -78,6 +73,7 @@ class A2uiHost(context: Context, scope: CoroutineScope) {
             Log.w(A2UI_TAG, "Ignoring A2UI that is not a JSON array", e)
             return
         }
+        primaryColors.putAll(a2uiPrimaryColorsOf(a2uiJson))
         messages.forEach { message ->
             try {
                 processor.processInput(parser, message)
@@ -89,6 +85,9 @@ class A2uiHost(context: Context, scope: CoroutineScope) {
 
     /** Removes the surfaces with [surfaceIds]; ids that are not drawn are ignored by the processor. */
     fun deleteSurfaces(surfaceIds: Collection<String>) {
-        surfaceIds.forEach { process("[${deleteSurfaceMessage(it)}]") }
+        surfaceIds.forEach {
+            process("[${deleteSurfaceMessage(it)}]")
+            primaryColors.remove(it)
+        }
     }
 }

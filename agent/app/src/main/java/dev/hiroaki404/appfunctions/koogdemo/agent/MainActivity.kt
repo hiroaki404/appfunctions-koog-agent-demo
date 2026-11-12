@@ -54,6 +54,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.a2ui.A2uiSurface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -214,7 +215,9 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
                     onApproval = { functionName, approved -> viewModel.respondToApproval(turn.id, functionName, approved) },
                     a2uiSurface = { surfaceId ->
                         a2uiSurfaces.firstOrNull { it.id == surfaceId }?.let { surface ->
-                            A2uiSurface(surfaceModel = surface, modifier = Modifier.fillMaxWidth())
+                            CompositionLocalProvider(LocalA2uiPrimaryColor provides viewModel.a2uiHost.primaryColorOf(surfaceId)) {
+                                A2uiSurface(surfaceModel = surface, modifier = Modifier.fillMaxWidth())
+                            }
                         }
                     },
                 )
