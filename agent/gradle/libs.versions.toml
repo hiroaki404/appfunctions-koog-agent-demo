@@ -10,7 +10,15 @@ activityCompose = "1.13.0"
 # 2.3.10 exactly: the Compose compiler plugin only ships versions matching Kotlin's own
 # releases (2.3.0/2.3.10/2.3.20/2.3.21), unlike KSP which publishes extra patch builds.
 kotlin = "2.3.10"
-composeBom = "2026.02.01"
+# No BOM: the A2UI renderer (1.0.0-alpha02) is built against Compose 1.13.0-alpha03 and
+# material3 1.5.0-alpha28+, newer than any published BOM (the latest, 2026.09.00, is Compose 1.12.1
+# / material3 1.4.0). Compose is pinned explicitly to 1.13.0-rc01 / material3 1.5.0-rc01 so every
+# Compose artifact resolves to a single version. material-icons-extended is not versioned with
+# Compose (last release 1.7.8).
+compose = "1.13.0-rc01"
+material3 = "1.5.0-rc01"
+materialIcons = "1.7.8"
+a2uiCompose = "1.0.0-alpha02"
 appfunctions = "1.0.0-beta01"
 koog = "1.2.0"
 
@@ -23,15 +31,21 @@ androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecyc
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
-androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
-androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
-androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
-androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
-androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "compose" }
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "compose" }
+androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "compose" }
+androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "compose" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "compose" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "compose" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "compose" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "compose" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "compose" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "compose" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIcons" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+androidx-compose-material3-a2ui = { group = "androidx.compose.material3", name = "material3-a2ui", version.ref = "a2uiCompose" }
+androidx-a2ui-compose-ui = { group = "androidx.a2ui.compose", name = "compose-ui", version.ref = "a2uiCompose" }
+androidx-a2ui-compose-runtime = { group = "androidx.a2ui.compose", name = "compose-runtime", version.ref = "a2uiCompose" }
 appfunctions = { group = "androidx.appfunctions", name = "appfunctions", version.ref = "appfunctions" }
 koog-agents = { group = "ai.koog", name = "koog-agents", version.ref = "koog" }
 # koog-agents only pulls in LLM clients as runtime-scope deps, not compile-time ones, so

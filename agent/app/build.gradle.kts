@@ -19,7 +19,9 @@ fun localProperty(key: String): String {
 android {
     namespace = "dev.hiroaki404.appfunctions.koogdemo.agent"
     compileSdk {
-        version = release(37)
+        version = release(37) {
+            minorApiLevel = 1
+        }
     }
 
     defaultConfig {
@@ -53,10 +55,21 @@ android {
 }
 
 dependencies {
-    implementation(platform(libs.androidx.compose.bom))
+    // The A2UI artifacts request foundation/animation 1.13.0-alpha03 at runtime scope, which would
+    // sit next to the rest of Compose at 1.13.0-rc01. Pin them to the same version.
+    constraints {
+        implementation(libs.androidx.compose.foundation)
+        implementation(libs.androidx.compose.foundation.layout)
+        implementation(libs.androidx.compose.animation)
+        implementation(libs.androidx.compose.animation.core)
+    }
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    // A2UI: the official Compose renderer and the Material 3 basic catalog (alpha, needs compileSdk 37.1).
+    implementation(libs.androidx.compose.material3.a2ui)
+    implementation(libs.androidx.a2ui.compose.ui)
+    implementation(libs.androidx.a2ui.compose.runtime)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -72,7 +85,6 @@ dependencies {
     implementation(libs.koog.prompt.executor.google.client)
     implementation(libs.koog.http.client.ktor)
     testImplementation(libs.junit)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
