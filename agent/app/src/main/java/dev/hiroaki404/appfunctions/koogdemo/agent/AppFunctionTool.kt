@@ -18,8 +18,10 @@ import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -35,19 +37,49 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 
+/** What the LLM gets when the user declines; it also says not to retry, so the model reports it instead. */
+internal const val DECLINED_MESSAGE =
+    "Error: The user declined this action. Do not call it again; tell the user it was not done."
+
+/**
+ * Calls one AppFunction. If the function has a user-approval parameter (see [isUserApproval]), it is
+ * hidden from the LLM: [requestApproval] is asked first with the function's name, and only an
+ * approval lets the call go ahead, with the parameter filled in as approved. The default denies, so a
+ * caller that cannot ask the user never runs such a function.
+ */
 class AppFunctionTool(
     private val manager: AppFunctionManager,
     private val appFunctionMetadata: AppFunctionMetadata,
     descriptor: ToolDescriptor,
+    private val requestApproval: suspend (functionName: String) -> Boolean = { false },
 ) : Tool<JSONObject, String>(typeToken<JSONObject>(), typeToken<String>(), descriptor) {
     override suspend fun execute(args: JSONObject): String = try {
+        val approvalParameter = appFunctionMetadata.userApprovalParameter()
+        if (approvalParameter != null && !requestApproval(appFunctionMetadata.functionName)) {
+            DECLINED_MESSAGE
+        } else {
+            call(args, approvalParameter)
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        "Error: ${e.message ?: e.javaClass.simpleName}"
+    }
+
+    private suspend fun call(args: JSONObject, approvalParameter: AppFunctionParameterMetadata?): String {
         val parameters = AppFunctionData.Builder(appFunctionMetadata.parameters, appFunctionMetadata.packageMetadata.components).also { builder ->
             args.toKotlinxJsonObject().forEach { (name, value) ->
+                // The LLM never sees the approval parameter, so a value it makes up for it is ignored.
+                if (name == approvalParameter?.name) return@forEach
                 val type = appFunctionMetadata.parameters.firstOrNull { it.name == name }?.dataType ?: return@forEach
                 if (value !is JsonNull) builder.setJsonValue(name, value, type)
             }
+            if (approvalParameter != null) {
+                val approved = JsonObject(mapOf("approved" to JsonPrimitive(true)))
+                builder.setJsonValue(approvalParameter.name, approved, approvalParameter.dataType)
+            }
         }.build()
-        when (val response = manager.executeAppFunction(
+        return when (val response = manager.executeAppFunction(
             ExecuteAppFunctionRequest(appFunctionMetadata.packageName, appFunctionMetadata.id, parameters),
         )) {
             is ExecuteAppFunctionResponse.Success -> Json.encodeToString(JsonElement.serializer(), valueToJson(
@@ -57,8 +89,6 @@ class AppFunctionTool(
             ))
             is ExecuteAppFunctionResponse.Error -> "Error: ${response.error.errorMessage}"
         }
-    } catch (e: Exception) {
-        "Error: ${e.message ?: e.javaClass.simpleName}"
     }
 
     private fun AppFunctionData.Builder.setJsonValue(name: String, value: JsonElement, type: AppFunctionDataTypeMetadata) {

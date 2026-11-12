@@ -4,6 +4,7 @@ import ai.koog.agents.core.tools.ToolParameterType
 import androidx.appfunctions.AppFunctionName
 import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
@@ -15,6 +16,8 @@ import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -134,6 +137,77 @@ class AppFunctionSchemaConverterTest {
         assertTrue(name.length <= 64)
         assertTrue(name.matches(Regex("[a-zA-Z0-9_]+")))
     }
+
+    @Test
+    fun userApprovalIsRecognizedOnlyWhenBothNameAndTypeMatch() {
+        val approval = userApprovalType("example.tool.UserApproval")
+        val other = AppFunctionObjectTypeMetadata(
+            properties = mapOf("approved" to AppFunctionBooleanTypeMetadata(false)),
+            required = listOf("approved"),
+            qualifiedName = "example.tool.Confirmation",
+            isNullable = false,
+        )
+        val components = AppFunctionComponentsMetadata(mapOf("example.tool.UserApproval" to approval, "example.tool.Confirmation" to other))
+
+        assertTrue(parameter("userApproval", AppFunctionReferenceTypeMetadata("example.tool.UserApproval", false)).isUserApproval(components))
+        assertTrue(parameter("userApproval", approval).isUserApproval(components))
+        // The name matches but the type does not.
+        assertFalse(parameter("userApproval", AppFunctionReferenceTypeMetadata("example.tool.Confirmation", false)).isUserApproval(components))
+        assertFalse(parameter("userApproval", AppFunctionBooleanTypeMetadata(false)).isUserApproval(components))
+        // The type matches but the name does not.
+        assertFalse(parameter("approval", AppFunctionReferenceTypeMetadata("example.tool.UserApproval", false)).isUserApproval(components))
+        // An unresolvable reference is not an approval either.
+        assertFalse(parameter("userApproval", AppFunctionReferenceTypeMetadata("example.tool.Missing", false)).isUserApproval(components))
+    }
+
+    @Test
+    fun userApprovalTypeWithoutBooleanApprovedPropertyIsNotAnApproval() {
+        val wrong = AppFunctionObjectTypeMetadata(
+            properties = mapOf("approved" to AppFunctionStringTypeMetadata(false)),
+            required = listOf("approved"),
+            qualifiedName = "example.tool.UserApproval",
+            isNullable = false,
+        )
+        val components = AppFunctionComponentsMetadata(mapOf("example.tool.UserApproval" to wrong))
+
+        assertFalse(parameter("userApproval", AppFunctionReferenceTypeMetadata("example.tool.UserApproval", false)).isUserApproval(components))
+    }
+
+    @Test
+    fun userApprovalParameterIsLeftOutOfTheToolDescriptor() {
+        val metadata = function(
+            id = "example.Travel#bookFlight",
+            parameters = listOf(
+                parameter("fromCity", AppFunctionStringTypeMetadata(false)),
+                parameter("userApproval", AppFunctionReferenceTypeMetadata("example.tool.UserApproval", false)),
+            ),
+            components = AppFunctionComponentsMetadata(mapOf("example.tool.UserApproval" to userApprovalType("example.tool.UserApproval"))),
+        )
+
+        val descriptor = metadata.toToolDescriptor("bookFlight")
+
+        assertEquals(listOf("fromCity"), descriptor.requiredParameters.map { it.name })
+        assertTrue(descriptor.optionalParameters.isEmpty())
+        assertEquals("userApproval", metadata.userApprovalParameter()?.name)
+    }
+
+    @Test
+    fun parameterWithApprovalNameButOtherTypeStaysInTheToolDescriptor() {
+        val metadata = function(
+            id = "example.Service#act",
+            parameters = listOf(parameter("userApproval", AppFunctionBooleanTypeMetadata(false))),
+        )
+
+        assertEquals(listOf("userApproval"), metadata.toToolDescriptor("act").requiredParameters.map { it.name })
+        assertNull(metadata.userApprovalParameter())
+    }
+
+    private fun userApprovalType(qualifiedName: String) = AppFunctionObjectTypeMetadata(
+        properties = mapOf("approved" to AppFunctionBooleanTypeMetadata(false)),
+        required = listOf("approved"),
+        qualifiedName = qualifiedName,
+        isNullable = false,
+    )
 
     private fun parameter(name: String, type: AppFunctionDataTypeMetadata) =
         AppFunctionParameterMetadata(name, true, type)

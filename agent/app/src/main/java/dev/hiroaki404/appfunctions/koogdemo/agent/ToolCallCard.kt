@@ -19,9 +19,11 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,6 +48,7 @@ import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Ink2
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Line
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Sea
+import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Sun
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Surface
 import dev.hiroaki404.appfunctions.koogdemo.agent.ui.theme.Surface2
 import kotlinx.serialization.json.JsonArray
@@ -58,10 +61,17 @@ private val CardShape = RoundedCornerShape(14.dp)
 /**
  * One tool call: the function, what the model passed and what the app returned. Arguments show as
  * key/value rows with nested values summarized, the result as a one-line summary; tapping the card
- * expands both in full.
+ * expands both in full. While [ToolCallUiModel.awaitingApproval], the border turns orange and the
+ * card asks the user to allow or cancel the call ([onApprove], [onDecline]).
  */
 @Composable
-fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier, initiallyExpanded: Boolean = false) {
+fun ToolCallCard(
+    call: ToolCallUiModel,
+    modifier: Modifier = Modifier,
+    initiallyExpanded: Boolean = false,
+    onApprove: () -> Unit = {},
+    onDecline: () -> Unit = {},
+) {
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val arguments = remember(call.arguments) { parseToolJson(call.arguments) }
     val result = remember(call.result) { call.result?.let(::parseToolJson) }
@@ -70,7 +80,7 @@ fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier, initially
             .fillMaxWidth()
             .clip(CardShape)
             .background(Bg)
-            .border(1.dp, Line, CardShape)
+            .border(if (call.awaitingApproval) 2.dp else 1.dp, if (call.awaitingApproval) Sun else Line, CardShape)
             .clickable { expanded = !expanded }
             .animateContentSize()
             .padding(horizontal = 12.dp, vertical = 10.dp),
@@ -122,6 +132,9 @@ fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier, initially
                 else -> PlainValue(call.arguments, maxLines = if (expanded) Int.MAX_VALUE else 3)
             }
         }
+        if (call.awaitingApproval) {
+            ApprovalButtons(onApprove = onApprove, onDecline = onDecline)
+        }
         call.result?.let { raw ->
             Section(label = "結果") {
                 val isError = raw.startsWith("Error:")
@@ -135,6 +148,18 @@ fun ToolCallCard(call: ToolCallUiModel, modifier: Modifier = Modifier, initially
         }
         call.error?.let { error ->
             Text(error, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun ApprovalButtons(onApprove: () -> Unit, onDecline: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(onClick = onDecline, modifier = Modifier.weight(1f)) {
+            Text("やめる", color = Ink2, fontWeight = FontWeight.SemiBold)
+        }
+        Button(onClick = onApprove, modifier = Modifier.weight(1f)) {
+            Text("許可する", fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -299,6 +324,25 @@ private fun ToolCallCardExpandedPreview() {
             ToolCallUiModel(null, "getTravelInfo", """{"area":"北海道","month":12}""", ToolCallStatus.Succeeded, result = PreviewSpots, appLabel = "旅行"),
             modifier = Modifier.padding(16.dp),
             initiallyExpanded = true,
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFBFAF7, widthDp = 360)
+@Composable
+private fun ToolCallCardAwaitingApprovalPreview() {
+    AgentTheme {
+        ToolCallCard(
+            ToolCallUiModel(
+                null,
+                "bookFlight",
+                """{"fromCity":"東京","toCity":"札幌","date":"2026-12-12"}""",
+                ToolCallStatus.Running,
+                appLabel = "旅行",
+                displayName = "航空券の予約",
+                awaitingApproval = true,
+            ),
+            modifier = Modifier.padding(16.dp),
         )
     }
 }

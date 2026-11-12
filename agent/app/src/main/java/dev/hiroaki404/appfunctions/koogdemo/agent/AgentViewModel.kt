@@ -9,6 +9,7 @@ import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,6 +30,11 @@ import java.util.UUID
 private const val AGENT_TAG = "KoogAgent"
 private const val DISCOVERY_TAG = "AppFunctionDiscovery"
 
+/** A function call waiting for the user to allow or decline it; [answer] completes with the user's choice. */
+private class PendingApproval(val turnId: Int, val functionName: String) {
+    val answer = CompletableDeferred<Boolean>()
+}
+
 /**
  * Holds the conversation: a chat-history provider shared by every per-message agent, the current
  * session id and the turns shown on screen. Also keeps watching the device's AppFunctions, so every
@@ -40,6 +46,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private val chatHistoryProvider = InMemoryChatHistoryProvider()
     private var sessionId = UUID.randomUUID().toString()
     private var nextTurnId = 0
+
+    // Guarded by itself: the agent asks from its own coroutine while the UI answers from the main thread.
+    private val pendingApprovals = mutableListOf<PendingApproval>()
 
     private val _turns = MutableStateFlow<List<ChatTurn>>(emptyList())
     val turns: StateFlow<List<ChatTurn>> = _turns.asStateFlow()
@@ -91,6 +100,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     appInstructionsOf = { metadata ->
                         metadata.packageMetadata.resolveAppFunctionAppMetadata(getApplication())?.instructions
                     },
+                    requestApproval = { functionName -> awaitApproval(turnId, functionName) },
                     onToolCallEvent = { event ->
                         _turns.update { turns -> turns.updateTurn(turnId) { it.applyToolEvent(event) } }
                     },
@@ -106,6 +116,31 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 _isRunning.value = false
             }
         }
+    }
+
+    /**
+     * Shows the approval buttons on the card of [functionName] in turn [turnId] and suspends the agent
+     * until the user answers. The card is the latest running one of that function, as for tool events.
+     * Returns false if the user declines or starts a new conversation.
+     */
+    private suspend fun awaitApproval(turnId: Int, functionName: String): Boolean {
+        val pending = PendingApproval(turnId, functionName)
+        synchronized(pendingApprovals) { pendingApprovals += pending }
+        _turns.update { turns -> turns.updateTurn(turnId) { it.withAwaitingApproval(functionName, true) } }
+        try {
+            return pending.answer.await()
+        } finally {
+            synchronized(pendingApprovals) { pendingApprovals -= pending }
+            _turns.update { turns -> turns.updateTurn(turnId) { it.withAwaitingApproval(functionName, false) } }
+        }
+    }
+
+    /** The user's choice on the approval buttons of the card of [functionName] in turn [turnId]. */
+    fun respondToApproval(turnId: Int, functionName: String, approved: Boolean) {
+        val pending = synchronized(pendingApprovals) {
+            pendingApprovals.lastOrNull { it.turnId == turnId && it.functionName == functionName }
+        }
+        pending?.answer?.complete(approved)
     }
 
     /** The provider app's name as shown on the launcher; the agent has no build-time knowledge of these apps. */
@@ -132,6 +167,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Starts over: a new session id means the agent no longer sees earlier turns. */
     fun newConversation() {
+        // A call still waiting for approval can no longer be answered, so decline it.
+        synchronized(pendingApprovals) { pendingApprovals.toList() }.forEach { it.answer.complete(false) }
         sessionId = UUID.randomUUID().toString()
         _turns.value = emptyList()
     }

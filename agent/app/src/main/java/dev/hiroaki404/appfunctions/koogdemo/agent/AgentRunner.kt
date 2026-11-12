@@ -43,6 +43,9 @@ private data class ToolSource(
  * the main thread, and the card falls back to the function name when it returns null.
  * [appInstructionsOf] reads the app description of a function's provider app; it runs off the main
  * thread, once per app, and the results are added to the system prompt.
+ * [requestApproval] asks the user to allow a function that takes a user approval (see
+ * [isUserApproval]); it is given the function's name and suspends the tool call, and so the agent,
+ * until the user answers. The default declines.
  */
 suspend fun runAgent(
     apiKey: String,
@@ -54,12 +57,13 @@ suspend fun runAgent(
     appLabelOf: (packageName: String) -> String? = { null },
     functionDisplayNameOf: (AppFunctionMetadata) -> String? = { null },
     appInstructionsOf: (AppFunctionMetadata) -> String? = { null },
+    requestApproval: suspend (functionName: String) -> Boolean = { false },
     onToolCallEvent: suspend (ToolCallUiEvent) -> Unit = {},
 ): String {
     val discovered = appFunctions.mapNotNull { metadata ->
         runCatching {
             val descriptor = metadata.toToolDescriptor()
-            metadata to AppFunctionTool(appFunctionManager, metadata, descriptor)
+            metadata to AppFunctionTool(appFunctionManager, metadata, descriptor, requestApproval)
         }.onFailure { error ->
             Log.w("KoogAgent", "Skipping unsupported AppFunction ${metadata.id}", error)
         }.getOrNull()

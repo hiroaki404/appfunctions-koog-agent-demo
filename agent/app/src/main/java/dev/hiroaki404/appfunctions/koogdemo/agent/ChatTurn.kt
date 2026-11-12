@@ -15,6 +15,9 @@ data class ChatTurn(
 
     fun applyToolEvent(event: ToolCallUiEvent): ChatTurn = copy(toolCalls = toolCalls.apply(event))
 
+    fun withAwaitingApproval(functionName: String, awaiting: Boolean): ChatTurn =
+        copy(toolCalls = toolCalls.withAwaitingApproval(functionName, awaiting))
+
     fun completed(response: String): ChatTurn = copy(response = response, error = null, isRunning = false)
 
     fun failed(error: String): ChatTurn = copy(response = null, error = error, isRunning = false)

@@ -18,7 +18,27 @@ private fun tripCall(name: String, displayName: String, arguments: String, statu
         displayName = displayName,
     )
 
-/** One turn per state the chat screen can show: answered, a failed tool, an error, and still running. */
+/** A booking waiting for the user to allow it: the card shows the buttons, and the agent is suspended. */
+val ApprovalSampleTurn = ChatTurn(
+    id = -5,
+    prompt = "東京から札幌の航空券を12月12日で取って",
+    toolCalls = ToolCallUiState(
+        listOf(
+            tripCall(
+                "bookFlight",
+                "航空券の予約",
+                """{"fromCity":"東京","toCity":"札幌","date":"2026-12-12"}""",
+                ToolCallStatus.Running,
+            ).copy(awaitingApproval = true),
+        ),
+    ),
+    isRunning = true,
+)
+
+/**
+ * One turn per state the chat screen can show: answered, a failed tool, an error, still running and
+ * waiting for the user's approval.
+ */
 val SampleTurns: List<ChatTurn> = listOf(
     ChatTurn(
         id = -4,
@@ -96,4 +116,5 @@ val SampleTurns: List<ChatTurn> = listOf(
         toolCalls = ToolCallUiState(listOf(tripCall("searchItineraries", "旅程の検索", "{}", ToolCallStatus.Running))),
         isRunning = true,
     ),
+    ApprovalSampleTurn,
 )

@@ -71,6 +71,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -206,7 +207,10 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             items(turns, key = { it.id }) { turn ->
-                ChatTurnItem(turn)
+                ChatTurnItem(
+                    turn,
+                    onApproval = { functionName, approved -> viewModel.respondToApproval(turn.id, functionName, approved) },
+                )
             }
             // End marker for the auto-scroll above; takes no space.
             item(key = "end") { Spacer(Modifier.height(0.dp)) }
@@ -333,11 +337,19 @@ private fun ChatInputBar(
 }
 
 @Composable
-private fun ChatTurnItem(turn: ChatTurn, modifier: Modifier = Modifier) {
+private fun ChatTurnItem(
+    turn: ChatTurn,
+    modifier: Modifier = Modifier,
+    onApproval: (functionName: String, approved: Boolean) -> Unit = { _, _ -> },
+) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PromptBubble(turn.prompt)
         turn.toolCalls.calls.forEach { call ->
-            ToolCallCard(call = call)
+            ToolCallCard(
+                call = call,
+                onApprove = { onApproval(call.functionName, true) },
+                onDecline = { onApproval(call.functionName, false) },
+            )
         }
         if (turn.isThinking) {
             ThinkingIndicator()
@@ -353,6 +365,14 @@ private fun ChatTurnItem(turn: ChatTurn, modifier: Modifier = Modifier) {
                 lineHeight = 24.75.sp,
             )
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFBFAF7, widthDp = 390)
+@Composable
+private fun ChatTurnAwaitingApprovalPreview() {
+    AgentTheme {
+        ChatTurnItem(ApprovalSampleTurn, modifier = Modifier.padding(16.dp))
     }
 }
 

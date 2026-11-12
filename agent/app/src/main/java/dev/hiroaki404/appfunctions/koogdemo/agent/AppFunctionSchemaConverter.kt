@@ -34,15 +34,40 @@ fun toolNameOf(metadata: AppFunctionMetadata): String {
         .ifBlank { "appFunction" }
 }
 
+/** The parameter name of the user-approval convention; see [isUserApproval]. */
+const val USER_APPROVAL_PARAMETER = "userApproval"
+
+private const val USER_APPROVAL_TYPE_SUFFIX = ".UserApproval"
+
+/**
+ * True if this parameter follows the user-approval convention: it is named [USER_APPROVAL_PARAMETER]
+ * and its type (through a reference, if any) is an object whose qualified name ends with
+ * ".UserApproval" and that has a boolean `approved` property. Both the name and the type must match,
+ * and only the metadata is inspected, so the agent needs no knowledge of the app that defines the type.
+ */
+fun AppFunctionParameterMetadata.isUserApproval(components: AppFunctionComponentsMetadata): Boolean {
+    if (name != USER_APPROVAL_PARAMETER) return false
+    val type = (dataType as? AppFunctionReferenceTypeMetadata)?.let { components.dataTypes[it.referenceDataType] } ?: dataType
+    return type is AppFunctionObjectTypeMetadata &&
+        type.qualifiedName?.endsWith(USER_APPROVAL_TYPE_SUFFIX) == true &&
+        type.properties["approved"] is AppFunctionBooleanTypeMetadata
+}
+
+/** The parameter following the user-approval convention, if the function has one. */
+fun AppFunctionMetadata.userApprovalParameter(): AppFunctionParameterMetadata? =
+    parameters.firstOrNull { it.isUserApproval(packageMetadata.components) }
+
+/** The descriptor the LLM sees; a user-approval parameter is left out because the agent fills it in. */
 fun AppFunctionMetadata.toToolDescriptor(toolName: String = toolNameOf(this)): ToolDescriptor {
     fun descriptor(parameter: AppFunctionParameterMetadata) =
         ToolParameterDescriptor(parameter.name, parameter.description, parameter.dataType.toToolParameterType(packageMetadata.components))
 
+    val visibleParameters = parameters.filterNot { it.isUserApproval(packageMetadata.components) }
     return ToolDescriptor(
         name = toolName,
         description = description,
-        requiredParameters = parameters.filter { it.isRequired && !it.dataType.isNullable }.map(::descriptor),
-        optionalParameters = parameters.filterNot { it.isRequired && !it.dataType.isNullable }.map(::descriptor),
+        requiredParameters = visibleParameters.filter { it.isRequired && !it.dataType.isNullable }.map(::descriptor),
+        optionalParameters = visibleParameters.filterNot { it.isRequired && !it.dataType.isNullable }.map(::descriptor),
     )
 }
 

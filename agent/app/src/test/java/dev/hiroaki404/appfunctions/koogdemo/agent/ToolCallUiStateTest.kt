@@ -1,6 +1,7 @@
 package dev.hiroaki404.appfunctions.koogdemo.agent
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class ToolCallUiStateTest {
@@ -38,5 +39,51 @@ class ToolCallUiStateTest {
         assertEquals(ToolCallStatus.Running, state.calls[0].status)
         assertEquals(ToolCallStatus.Failed, state.calls[1].status)
         assertEquals("Unsupported currency", state.calls[1].error)
+    }
+
+    @Test
+    fun awaitingApprovalMarksOnlyTheLatestRunningCallOfTheFunction() {
+        val state = ToolCallUiState()
+            .apply(ToolCallUiEvent.Started(null, "bookFlight", "{}"))
+            .apply(ToolCallUiEvent.Completed(null, "bookFlight", "{}", "done"))
+            .apply(ToolCallUiEvent.Started(null, "bookFlight", "{}"))
+            .apply(ToolCallUiEvent.Started(null, "sendMessage", "{}"))
+            .withAwaitingApproval("bookFlight", true)
+
+        assertEquals(listOf(false, true, false), state.calls.map { it.awaitingApproval })
+        assertEquals(ToolCallStatus.Running, state.calls[1].status)
+    }
+
+    @Test
+    fun clearingAwaitingApprovalKeepsTheCallRunning() {
+        val state = ToolCallUiState()
+            .apply(ToolCallUiEvent.Started(null, "bookFlight", "{}"))
+            .withAwaitingApproval("bookFlight", true)
+            .withAwaitingApproval("bookFlight", false)
+
+        assertFalse(state.calls.single().awaitingApproval)
+        assertEquals(ToolCallStatus.Running, state.calls.single().status)
+    }
+
+    @Test
+    fun awaitingApprovalForAnUnknownFunctionChangesNothing() {
+        val state = ToolCallUiState().apply(ToolCallUiEvent.Started(null, "add", "{}"))
+
+        assertEquals(state, state.withAwaitingApproval("bookFlight", true))
+    }
+
+    @Test
+    fun finishingACallClearsAwaitingApproval() {
+        val declined = ToolCallUiState()
+            .apply(ToolCallUiEvent.Started(null, "bookFlight", "{}"))
+            .withAwaitingApproval("bookFlight", true)
+            .apply(ToolCallUiEvent.Completed(null, "bookFlight", "{}", "Error: The user declined this action."))
+        val failed = ToolCallUiState()
+            .apply(ToolCallUiEvent.Started("a", "bookFlight", "{}"))
+            .withAwaitingApproval("bookFlight", true)
+            .apply(ToolCallUiEvent.Failed("a", "bookFlight", "{}", "boom"))
+
+        assertFalse(declined.calls.single().awaitingApproval)
+        assertFalse(failed.calls.single().awaitingApproval)
     }
 }

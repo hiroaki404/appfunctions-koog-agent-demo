@@ -61,6 +61,8 @@ data class ToolCallUiModel(
     val appLabel: String? = null,
     val packageName: String? = null,
     val displayName: String? = null,
+    /** True while the call waits for the user to allow or decline it; [status] stays [ToolCallStatus.Running]. */
+    val awaitingApproval: Boolean = false,
 )
 
 /** Immutable, chronological state for tool-call cards. */
@@ -79,12 +81,27 @@ data class ToolCallUiState(val calls: List<ToolCallUiModel> = emptyList()) {
         )
 
         is ToolCallUiEvent.Completed -> updateOrAppend(event) { current ->
-            current.copy(status = ToolCallStatus.Succeeded, result = event.result, error = null)
+            current.copy(status = ToolCallStatus.Succeeded, result = event.result, error = null, awaitingApproval = false)
         }
 
         is ToolCallUiEvent.Failed -> updateOrAppend(event) { current ->
-            current.copy(status = ToolCallStatus.Failed, result = null, error = event.error)
+            current.copy(status = ToolCallStatus.Failed, result = null, error = event.error, awaitingApproval = false)
         }
+    }
+
+    /**
+     * Marks the latest running call of [functionName] as waiting for the user's approval, or clears the
+     * mark again. Calls are matched by function name because Koog doesn't pass the tool call id to the
+     * tool; this is the same rule as for events without an id. A no-op if there is no such call.
+     */
+    fun withAwaitingApproval(functionName: String, awaiting: Boolean): ToolCallUiState {
+        val index = calls.indexOfLast { call ->
+            call.status == ToolCallStatus.Running && call.functionName == functionName && call.awaitingApproval != awaiting
+        }
+        if (index < 0) return this
+        return copy(calls = calls.mapIndexed { currentIndex, call ->
+            if (currentIndex == index) call.copy(awaitingApproval = awaiting) else call
+        })
     }
 
     private fun updateOrAppend(
