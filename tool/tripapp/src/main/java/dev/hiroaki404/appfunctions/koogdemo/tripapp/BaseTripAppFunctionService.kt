@@ -59,15 +59,17 @@ abstract class BaseTripAppFunctionService : AppFunctionService() {
      *
      * @param itinerary The itinerary to save, with a non-blank title and at least one day. The day
      *   dates are the real dates of the trip, in `yyyy-MM-dd` format.
-     * @return The ID of the saved itinerary.
+     * @return The ID of the saved itinerary, and the itinerary as A2UI messages in `a2ui`. `a2ui`
+     *   is only for display by agents that can render it; do not read or quote it.
      */
     @AppFunctionDeclaration(isDescribedByKDoc = true)
-    suspend fun saveItinerary(itinerary: Itinerary): String = executeLogged(
+    suspend fun saveItinerary(itinerary: Itinerary): SavedItineraryResult = executeLogged(
         "saveItinerary",
         "itinerary=$itinerary",
     ) {
         TravelRules.validate(itinerary)?.let { throw AppFunctionInvalidArgumentException(it) }
-        repository.saveItinerary(itinerary, addedByAi = true)
+        val itineraryId = repository.saveItinerary(itinerary, addedByAi = true)
+        SavedItineraryResult(itineraryId, itineraryA2uiJson(itineraryId, itinerary))
     }
 
     /**

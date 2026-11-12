@@ -68,7 +68,9 @@ class BaseTripAppFunctionServiceInstrumentedTest {
     fun saveItineraryReturnsDistinctIdsAndRejectsInvalidDate() = runBlocking<Unit> {
         val first = service.saveItinerary(TripSeed.pastTrip)
         val second = service.saveItinerary(TripSeed.upcomingTrip)
-        assertEquals(false, first == second)
+        assertEquals(false, first.itineraryId == second.itineraryId)
+        // Each call gets its own A2UI surface.
+        assertEquals(false, first.a2ui == second.a2ui)
 
         val invalid = Itinerary("旅", listOf(ItineraryDay("12/20", emptyList())))
         assertThrows(AppFunctionInvalidArgumentException::class.java) {

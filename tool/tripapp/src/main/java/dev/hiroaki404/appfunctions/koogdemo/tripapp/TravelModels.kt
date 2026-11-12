@@ -29,6 +29,15 @@ data class Itinerary(
     val days: List<ItineraryDay>,
 )
 
+/** The result of saving an itinerary. */
+@AppFunctionSerializable(isDescribedByKDoc = true)
+data class SavedItineraryResult(
+    /** The id of the saved itinerary. */
+    val itineraryId: String,
+    /** The itinerary as A2UI messages for agents that can show it; not for reading. */
+    val a2ui: String,
+)
+
 /** A confirmed flight booking. */
 @AppFunctionSerializable(isDescribedByKDoc = true)
 data class FlightBooking(
