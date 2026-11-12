@@ -46,6 +46,8 @@ private data class ToolSource(
  * [requestApproval] asks the user to allow a function that takes a user approval (see
  * [isUserApproval]); it is given the function's name and suspends the tool call, and so the agent,
  * until the user answers. The default declines.
+ * [onA2ui] is given the A2UI messages (a JSON array) a function returned in its `a2ui` field, with the
+ * function's name, before that call's completed event; they are not passed on to the LLM.
  */
 suspend fun runAgent(
     apiKey: String,
@@ -58,12 +60,13 @@ suspend fun runAgent(
     functionDisplayNameOf: (AppFunctionMetadata) -> String? = { null },
     appInstructionsOf: (AppFunctionMetadata) -> String? = { null },
     requestApproval: suspend (functionName: String) -> Boolean = { false },
+    onA2ui: (functionName: String, a2uiJson: String) -> Unit = { _, _ -> },
     onToolCallEvent: suspend (ToolCallUiEvent) -> Unit = {},
 ): String {
     val discovered = appFunctions.mapNotNull { metadata ->
         runCatching {
             val descriptor = metadata.toToolDescriptor()
-            metadata to AppFunctionTool(appFunctionManager, metadata, descriptor, requestApproval)
+            metadata to AppFunctionTool(appFunctionManager, metadata, descriptor, requestApproval, onA2ui)
         }.onFailure { error ->
             Log.w("KoogAgent", "Skipping unsupported AppFunction ${metadata.id}", error)
         }.getOrNull()

@@ -86,4 +86,30 @@ class ToolCallUiStateTest {
         assertFalse(declined.calls.single().awaitingApproval)
         assertFalse(failed.calls.single().awaitingApproval)
     }
+
+    @Test
+    fun a2uiSurfaceIsAttachedToTheLatestRunningCallOfTheFunctionAndKeptWhenItCompletes() {
+        val state = ToolCallUiState()
+            .apply(ToolCallUiEvent.Started(null, "saveItinerary", "{}"))
+            .apply(ToolCallUiEvent.Completed(null, "saveItinerary", "{}", "{}"))
+            .apply(ToolCallUiEvent.Started(null, "saveItinerary", "{}"))
+            .apply(ToolCallUiEvent.Started(null, "add", "{}"))
+            .withA2uiSurface("saveItinerary", "itinerary-2")
+
+        assertEquals(listOf(null, "itinerary-2", null), state.calls.map { it.a2uiSurfaceId })
+
+        val completed = state.apply(ToolCallUiEvent.Completed(null, "saveItinerary", "{}", "{}"))
+        assertEquals("itinerary-2", completed.calls[1].a2uiSurfaceId)
+        assertEquals(ToolCallStatus.Succeeded, completed.calls[1].status)
+    }
+
+    @Test
+    fun a2uiSurfaceForAFunctionWithoutARunningCallChangesNothing() {
+        val state = ToolCallUiState()
+            .apply(ToolCallUiEvent.Started(null, "add", "{}"))
+            .apply(ToolCallUiEvent.Completed(null, "add", "{}", "3"))
+
+        assertEquals(state, state.withA2uiSurface("add", "s"))
+        assertEquals(state, state.withA2uiSurface("saveItinerary", "s"))
+    }
 }

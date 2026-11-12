@@ -18,6 +18,13 @@ data class ChatTurn(
     fun withAwaitingApproval(functionName: String, awaiting: Boolean): ChatTurn =
         copy(toolCalls = toolCalls.withAwaitingApproval(functionName, awaiting))
 
+    fun withA2uiSurface(functionName: String, surfaceId: String): ChatTurn =
+        copy(toolCalls = toolCalls.withA2uiSurface(functionName, surfaceId))
+
+    /** The ids of the A2UI surfaces the turn's tool calls returned. */
+    val a2uiSurfaceIds: List<String>
+        get() = toolCalls.calls.mapNotNull { it.a2uiSurfaceId }
+
     fun completed(response: String): ChatTurn = copy(response = response, error = null, isRunning = false)
 
     fun failed(error: String): ChatTurn = copy(response = null, error = error, isRunning = false)

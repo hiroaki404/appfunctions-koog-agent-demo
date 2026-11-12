@@ -11,6 +11,7 @@ import androidx.compose.material3.a2ui.A2uiSurface
 import androidx.compose.material3.a2ui.catalog.MaterialA2uiBasicCatalogV1Defaults
 import androidx.compose.material3.a2ui.catalog.materialA2uiBasicCatalogV1
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -83,8 +84,9 @@ fun splitA2uiMessages(jsonArray: String): List<String> =
 
 /**
  * Renders [messagesJson] (a JSON array of A2UI messages) with the official Material 3 renderer and
- * the basic catalog. The messages are processed synchronously on first composition. Only the
- * surface with [surfaceId] is drawn.
+ * the basic catalog. The messages are queued on first composition and handled by the processor's
+ * `collectMessages` loop, which runs while this is in the composition. Only the surface with
+ * [surfaceId] is drawn.
  */
 @Composable
 fun A2uiMessagesSurface(
@@ -106,6 +108,7 @@ fun A2uiMessagesSurface(
             splitA2uiMessages(messagesJson).forEach { processor.processInput(parser, it) }
         }
     }
+    LaunchedEffect(processor) { processor.collectMessages() }
     val surfaces by processor.activeSurfaces.collectAsState()
     surfaces.firstOrNull { it.id == surfaceId }?.let { surface ->
         A2uiSurface(surfaceModel = surface, modifier = modifier)

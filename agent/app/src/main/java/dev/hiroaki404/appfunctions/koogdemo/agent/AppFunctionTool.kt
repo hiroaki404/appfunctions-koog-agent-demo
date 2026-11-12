@@ -46,12 +46,17 @@ internal const val DECLINED_MESSAGE =
  * hidden from the LLM: [requestApproval] is asked first with the function's name, and only an
  * approval lets the call go ahead, with the parameter filled in as approved. The default denies, so a
  * caller that cannot ask the user never runs such a function.
+ *
+ * A function may also return an object with a string field `a2ui` (see [extractA2ui]). That field is
+ * removed from the result the LLM sees and handed to [onA2ui] with the function's name, to be drawn.
+ * It is called from the agent's coroutine, before the call's completed event.
  */
 class AppFunctionTool(
     private val manager: AppFunctionManager,
     private val appFunctionMetadata: AppFunctionMetadata,
     descriptor: ToolDescriptor,
     private val requestApproval: suspend (functionName: String) -> Boolean = { false },
+    private val onA2ui: (functionName: String, a2uiJson: String) -> Unit = { _, _ -> },
 ) : Tool<JSONObject, String>(typeToken<JSONObject>(), typeToken<String>(), descriptor) {
     override suspend fun execute(args: JSONObject): String = try {
         val approvalParameter = appFunctionMetadata.userApprovalParameter()
@@ -82,11 +87,15 @@ class AppFunctionTool(
         return when (val response = manager.executeAppFunction(
             ExecuteAppFunctionRequest(appFunctionMetadata.packageName, appFunctionMetadata.id, parameters),
         )) {
-            is ExecuteAppFunctionResponse.Success -> Json.encodeToString(JsonElement.serializer(), valueToJson(
-                response.returnValue,
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
-                resolve(appFunctionMetadata.response.valueType),
-            ))
+            is ExecuteAppFunctionResponse.Success -> {
+                val (forLlm, a2ui) = extractA2ui(valueToJson(
+                    response.returnValue,
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    resolve(appFunctionMetadata.response.valueType),
+                ))
+                if (a2ui != null) onA2ui(appFunctionMetadata.functionName, a2ui)
+                Json.encodeToString(JsonElement.serializer(), forLlm)
+            }
             is ExecuteAppFunctionResponse.Error -> "Error: ${response.error.errorMessage}"
         }
     }
@@ -156,3 +165,27 @@ class AppFunctionTool(
         else -> throw UnsupportedAppFunctionTypeException("Unsupported AppFunction return array item type")
     })
 }
+
+/** The name of the string field of a function result that carries A2UI messages; part of the convention with provider apps. */
+internal const val A2UI_FIELD = "a2ui"
+
+/**
+ * Splits [json], a function's result, into what the LLM should see and the A2UI messages to draw. If
+ * [json] is an object with a string field `a2ui`, the field is removed from the first and returned as
+ * the second; any other result is returned as it is, with null.
+ */
+internal fun extractA2ui(json: JsonElement): Pair<JsonElement, String?> {
+    val a2ui = (json as? JsonObject)?.get(A2UI_FIELD) as? JsonPrimitive
+    if (a2ui == null || !a2ui.isString) return json to null
+    return JsonObject(json - A2UI_FIELD) to a2ui.content
+}
+
+/**
+ * The `surfaceId` of the first `createSurface` message in [a2uiJson], a JSON array of A2UI messages;
+ * null if there is none or the JSON is malformed.
+ */
+internal fun a2uiSurfaceIdOf(a2uiJson: String): String? = runCatching {
+    Json.parseToJsonElement(a2uiJson).jsonArray.firstNotNullOfOrNull { message ->
+        message.jsonObject["createSurface"]?.jsonObject?.get("surfaceId")?.jsonPrimitive?.takeIf { it.isString }?.content
+    }
+}.getOrNull()

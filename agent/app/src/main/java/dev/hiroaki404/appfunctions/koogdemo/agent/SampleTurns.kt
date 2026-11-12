@@ -35,9 +35,28 @@ val ApprovalSampleTurn = ChatTurn(
     isRunning = true,
 )
 
+/** A saved itinerary: the card shows the A2UI surface the function returned right under it. */
+val A2uiSampleTurn = ChatTurn(
+    id = -6,
+    prompt = "京都2泊3日の旅程を保存して",
+    toolCalls = ToolCallUiState(
+        listOf(
+            tripCall(
+                "saveItinerary",
+                "旅程の保存",
+                """{"itinerary":{"title":"京都 2 泊 3 日の旅","days":[{"date":"2026-12-05","spots":[{"name":"清水寺"},{"name":"祇園・花見小路"}]},{"date":"2026-12-06","spots":[{"name":"伏見稲荷大社"},{"name":"嵐山・竹林の小径"}]}]}}""",
+                ToolCallStatus.Succeeded,
+                result = """{"itineraryId":"sample"}""",
+            ).copy(a2uiSurfaceId = SAMPLE_ITINERARY_SURFACE_ID),
+        ),
+    ),
+    response = "「京都 2 泊 3 日の旅」の旅程を保存しました。",
+    isRunning = false,
+)
+
 /**
- * One turn per state the chat screen can show: answered, a failed tool, an error, still running and
- * waiting for the user's approval.
+ * One turn per state the chat screen can show: answered, a failed tool, an error, still running,
+ * waiting for the user's approval and a saved itinerary with its A2UI card.
  */
 val SampleTurns: List<ChatTurn> = listOf(
     ChatTurn(
@@ -117,4 +136,5 @@ val SampleTurns: List<ChatTurn> = listOf(
         isRunning = true,
     ),
     ApprovalSampleTurn,
+    A2uiSampleTurn,
 )

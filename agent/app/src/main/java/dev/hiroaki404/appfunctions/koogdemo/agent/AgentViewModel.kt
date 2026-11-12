@@ -47,6 +47,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private var sessionId = UUID.randomUUID().toString()
     private var nextTurnId = 0
 
+    /** Draws the A2UI cards that functions returned; [a2uiHost].activeSurfaces holds them for the UI. */
+    val a2uiHost = A2uiHost(application, viewModelScope)
+
     // Guarded by itself: the agent asks from its own coroutine while the UI answers from the main thread.
     private val pendingApprovals = mutableListOf<PendingApproval>()
 
@@ -101,6 +104,12 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                         metadata.packageMetadata.resolveAppFunctionAppMetadata(getApplication())?.instructions
                     },
                     requestApproval = { functionName -> awaitApproval(turnId, functionName) },
+                    onA2ui = { functionName, a2uiJson ->
+                        a2uiHost.process(a2uiJson)
+                        a2uiSurfaceIdOf(a2uiJson)?.let { surfaceId ->
+                            _turns.update { turns -> turns.updateTurn(turnId) { it.withA2uiSurface(functionName, surfaceId) } }
+                        }
+                    },
                     onToolCallEvent = { event ->
                         _turns.update { turns -> turns.updateTurn(turnId) { it.applyToolEvent(event) } }
                     },
@@ -170,6 +179,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         // A call still waiting for approval can no longer be answered, so decline it.
         synchronized(pendingApprovals) { pendingApprovals.toList() }.forEach { it.answer.complete(false) }
         sessionId = UUID.randomUUID().toString()
+        a2uiHost.deleteSurfaces(_turns.value.flatMap { it.a2uiSurfaceIds })
         _turns.value = emptyList()
     }
 
@@ -177,6 +187,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun loadSampleTurns() {
         if (_isRunning.value) return
         sessionId = UUID.randomUUID().toString()
+        a2uiHost.deleteSurfaces(_turns.value.flatMap { it.a2uiSurfaceIds })
+        a2uiHost.process(SAMPLE_ITINERARY_A2UI_JSON)
         _turns.value = SampleTurns
     }
 }

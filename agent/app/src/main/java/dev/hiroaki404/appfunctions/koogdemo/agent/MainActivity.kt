@@ -52,6 +52,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.a2ui.A2uiSurface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -130,6 +131,7 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
     val turns by viewModel.turns.collectAsStateWithLifecycle()
     val isRunning by viewModel.isRunning.collectAsStateWithLifecycle()
     val availableTools by viewModel.availableTools.collectAsStateWithLifecycle()
+    val a2uiSurfaces by viewModel.a2uiHost.activeSurfaces.collectAsStateWithLifecycle()
     var prompt by remember { mutableStateOf("") }
     var showSampleDialog by remember { mutableStateOf(false) }
 
@@ -210,6 +212,11 @@ fun AgentChatScreen(viewModel: AgentViewModel, onOpenTools: () -> Unit, modifier
                 ChatTurnItem(
                     turn,
                     onApproval = { functionName, approved -> viewModel.respondToApproval(turn.id, functionName, approved) },
+                    a2uiSurface = { surfaceId ->
+                        a2uiSurfaces.firstOrNull { it.id == surfaceId }?.let { surface ->
+                            A2uiSurface(surfaceModel = surface, modifier = Modifier.fillMaxWidth())
+                        }
+                    },
                 )
             }
             // End marker for the auto-scroll above; takes no space.
@@ -341,6 +348,8 @@ private fun ChatTurnItem(
     turn: ChatTurn,
     modifier: Modifier = Modifier,
     onApproval: (functionName: String, approved: Boolean) -> Unit = { _, _ -> },
+    // Draws the A2UI surface with this id, if there is one; a slot so previews can draw a fixed sample.
+    a2uiSurface: @Composable (surfaceId: String) -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PromptBubble(turn.prompt)
@@ -350,6 +359,8 @@ private fun ChatTurnItem(
                 onApprove = { onApproval(call.functionName, true) },
                 onDecline = { onApproval(call.functionName, false) },
             )
+            // The surface is its own card (the A2UI Card component), directly under the call that returned it.
+            call.a2uiSurfaceId?.let { a2uiSurface(it) }
         }
         if (turn.isThinking) {
             ThinkingIndicator()
@@ -373,6 +384,20 @@ private fun ChatTurnItem(
 private fun ChatTurnAwaitingApprovalPreview() {
     AgentTheme {
         ChatTurnItem(ApprovalSampleTurn, modifier = Modifier.padding(16.dp))
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFBFAF7, widthDp = 390)
+@Composable
+private fun ChatTurnWithA2uiCardPreview() {
+    AgentTheme {
+        ChatTurnItem(
+            A2uiSampleTurn,
+            modifier = Modifier.padding(16.dp),
+            a2uiSurface = { surfaceId ->
+                A2uiMessagesSurface(SAMPLE_ITINERARY_A2UI_JSON, surfaceId, Modifier.fillMaxWidth())
+            },
+        )
     }
 }
 

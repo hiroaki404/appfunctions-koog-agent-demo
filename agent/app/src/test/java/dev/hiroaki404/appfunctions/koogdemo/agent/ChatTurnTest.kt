@@ -87,4 +87,14 @@ class ChatTurnTest {
 
         assertEquals(turns, turns.updateTurn(99) { it.completed("done") })
     }
+
+    @Test
+    fun a2uiSurfaceIdsListsTheSurfacesOfTheTurnsCalls() {
+        val turn = ChatTurn(id = 1, prompt = "a")
+            .applyToolEvent(ToolCallUiEvent.Started(null, "saveItinerary", "{}"))
+            .applyToolEvent(ToolCallUiEvent.Started(null, "add", "{}"))
+            .withA2uiSurface("saveItinerary", "itinerary-1")
+
+        assertEquals(listOf("itinerary-1"), turn.a2uiSurfaceIds)
+    }
 }

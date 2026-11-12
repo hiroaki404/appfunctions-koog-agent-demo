@@ -63,6 +63,8 @@ data class ToolCallUiModel(
     val displayName: String? = null,
     /** True while the call waits for the user to allow or decline it; [status] stays [ToolCallStatus.Running]. */
     val awaitingApproval: Boolean = false,
+    /** The id of the A2UI surface the call returned, drawn under the card; null if it returned none. */
+    val a2uiSurfaceId: String? = null,
 )
 
 /** Immutable, chronological state for tool-call cards. */
@@ -101,6 +103,21 @@ data class ToolCallUiState(val calls: List<ToolCallUiModel> = emptyList()) {
         if (index < 0) return this
         return copy(calls = calls.mapIndexed { currentIndex, call ->
             if (currentIndex == index) call.copy(awaitingApproval = awaiting) else call
+        })
+    }
+
+    /**
+     * Attaches the A2UI surface [surfaceId] to the latest running call of [functionName], which is the
+     * call that returned it: a function's result is handled before its completed event. Matched by
+     * function name, as for [withAwaitingApproval]. A no-op if there is no such call.
+     */
+    fun withA2uiSurface(functionName: String, surfaceId: String): ToolCallUiState {
+        val index = calls.indexOfLast { call ->
+            call.status == ToolCallStatus.Running && call.functionName == functionName
+        }
+        if (index < 0) return this
+        return copy(calls = calls.mapIndexed { currentIndex, call ->
+            if (currentIndex == index) call.copy(a2uiSurfaceId = surfaceId) else call
         })
     }
 
