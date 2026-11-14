@@ -4,6 +4,8 @@ A demo showing a [Koog](https://github.com/JetBrains/koog) AI agent discovering 
 Android [AppFunctions](https://developer.android.com/ai/appfunctions) it knows nothing about at
 build time.
 
+<img src="images/agent-book-flight.png" alt="The agent app calling the travel app's bookFlight AppFunction" width="320">
+
 ## What this demonstrates
 
 > The agent discovers AppFunctions **at runtime**, converts their metadata into Koog tools on the
